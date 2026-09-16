@@ -53,3 +53,22 @@ body.modalOpen{overflow:hidden}
  .detailClub img{width:22px;height:22px;flex-basis:22px}
  .detailScore{font-size:20px}
 }
+
+/* Player squad actions */
+.playerActionGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.detailAction{padding:11px 10px;border-radius:11px;font-weight:900}
+.detailAction:disabled{opacity:.38;cursor:not-allowed}
+.addAction{grid-column:1/-1;background:#00ff87;color:#25002c}
+.removeAction{background:#ff5b68;color:#fff}
+.subAction{background:#ffffff18;color:#fff;border:1px solid #ffffff2f}
+.captainAction{background:#00ff87;color:#25002c}
+#substituteOptions{margin-top:10px}
+.subTitle{font-size:12px;font-weight:900;margin-bottom:7px;opacity:.85}
+.subChoices{display:grid;gap:7px}
+.subChoice{width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:8px;border-radius:10px;background:#ffffff12;color:#fff;border:1px solid #ffffff1f}
+.subChoice img{width:42px;height:42px;object-fit:contain;background:#46004d;border-radius:8px}
+.subChoice span{display:flex;flex-direction:column;min-width:0}
+.subChoice b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subChoice small{opacity:.7;margin-top:2px}
+.subEmpty{font-size:12px;opacity:.7;margin:8px 0 0}
+@media(max-width:520px){.playerActionGrid{grid-template-columns:1fr 1fr}.captainAction{grid-column:1/-1}}
