@@ -1,0 +1,1 @@
+INSERT INTO fantasy_leagues(name,code,owner_user_id) SELECT 'UEFA Baller League','BALLER','system' WHERE NOT EXISTS (SELECT 1 FROM fantasy_leagues WHERE code='BALLER');
