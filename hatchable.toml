@@ -1,0 +1,5 @@
+name = "FantasyXI"
+
+[auth]
+enabled = true
+providers = ["email"]
