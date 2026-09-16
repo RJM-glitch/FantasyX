@@ -13,3 +13,7 @@
 .teamPlayerCard .captainBadge{z-index:3}
 .emptyCard .teamPlayerIcon{width:42px;height:36px}
 @media(max-width:760px){.teamPositionBadge{font-size:7px;padding:2px 4px}.emptyCard .teamPlayerIcon{width:31px;height:27px}}
+
+/* Transfer club badges */
+.marketPlayerInfo{min-width:0}.marketClubLine{display:flex;align-items:center;gap:6px;color:#666;min-width:0}.marketClubLine span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.marketClubLogo{width:20px;height:20px;object-fit:contain;flex:0 0 20px}
+@media(max-width:760px){.marketClubLogo{width:18px;height:18px;flex-basis:18px}}
