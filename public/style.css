@@ -4,3 +4,12 @@
 .teamViewBar{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:#320039;color:#fff;flex-wrap:wrap}.teamViewBar button{padding:8px 14px;border-radius:999px;background:#fff2;color:#fff;border:1px solid #ffffff55}.teamViewBar button.active{background:#00ff87;color:#210025;border-color:#00ff87}.teamViewBar label{font-size:12px;font-weight:800;margin-left:6px}.teamViewBar select{padding:7px 9px;margin-left:5px;border-radius:7px}.teamBench{display:flex;align-items:flex-end;justify-content:center;gap:12px;background:#27002d;padding:12px;overflow:auto}.teamBench>b{color:#fff;font-size:11px;align-self:center;margin-right:4px}.teamBench .teamPlayerCard{flex:0 0 92px}.teamControls small{opacity:.8}
 .clubTable{width:100%;border-collapse:collapse}.clubTable th,.clubTable td{padding:10px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px}.clubTable th{background:#37003c;color:#fff;position:sticky;top:64px}.clubTable th:nth-child(2),.clubTable td:nth-child(2){text-align:left}.clubTableTeam{display:flex;align-items:center;gap:9px;font-weight:800}.clubTableTeam img{width:28px;height:28px;object-fit:contain}.clubTable .pts{font-weight:950;color:#37003c}.clubTableWrap{overflow:auto}.tableNote{font-size:12px;color:#777;margin-top:10px}
 @media(max-width:760px){.teamViewBar{justify-content:flex-start;overflow:auto;flex-wrap:nowrap}.teamViewBar label{white-space:nowrap}.teamBench{justify-content:flex-start}.teamBench .teamPlayerCard{flex-basis:64px}.clubTable th,.clubTable td{padding:8px 6px;font-size:11px}.clubTableTeam img{width:23px;height:23px}}
+
+/* Real player faces on My Team */
+.teamCardTop{overflow:hidden}
+.teamFace{width:100%;height:100%;object-fit:contain;object-position:center bottom;display:block;background:linear-gradient(180deg,#0b8b61,#087b54)}
+.teamPositionBadge{position:absolute;left:5px;bottom:4px;background:#ffffffee;color:#087b54;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:950;line-height:1.2;z-index:2}
+.teamPlayerCard.isCaptain .teamPositionBadge{left:5px}
+.teamPlayerCard .captainBadge{z-index:3}
+.emptyCard .teamPlayerIcon{width:42px;height:36px}
+@media(max-width:760px){.teamPositionBadge{font-size:7px;padding:2px 4px}.emptyCard .teamPlayerIcon{width:31px;height:27px}}
