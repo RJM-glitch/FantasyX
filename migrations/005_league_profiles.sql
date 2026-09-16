@@ -1,0 +1,1 @@
+ALTER TABLE fantasy_profiles ADD COLUMN IF NOT EXISTS real_name TEXT NOT NULL DEFAULT '';
