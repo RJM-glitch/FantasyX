@@ -1,0 +1,4 @@
+import { db } from 'hatchable';
+export const access='public';
+export const methods=['GET'];
+export default async function(req,res){const {rows}=await db.query(`SELECT p.real_name,p.team_name,p.total_points FROM fantasy_leagues l JOIN fantasy_league_members m ON m.league_id=l.id JOIN fantasy_profiles p ON p.user_id=m.user_id WHERE l.code='BALLER' ORDER BY p.total_points DESC,p.team_name ASC`);const table=rows.map((r,i)=>({real_name:r.real_name,team_name:r.team_name,total_points:Number(r.total_points)||0,display_points:Number(r.total_points)||0,rank:i+1}));res.setHeader('Cache-Control','no-store');res.json({name:'UEFA Baller League',code:'BALLER',live:false,table})}
