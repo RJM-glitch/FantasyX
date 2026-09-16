@@ -17,3 +17,39 @@
 /* Transfer club badges */
 .marketPlayerInfo{min-width:0}.marketClubLine{display:flex;align-items:center;gap:6px;color:#666;min-width:0}.marketClubLine span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.marketClubLogo{width:20px;height:20px;object-fit:contain;flex:0 0 20px}
 @media(max-width:760px){.marketClubLogo{width:18px;height:18px;flex-basis:18px}}
+
+/* Player details modal */
+body.modalOpen{overflow:hidden}
+.playerDetailOverlay{position:fixed;inset:0;background:rgba(26,0,31,.82);display:grid;place-items:center;padding:18px;z-index:150}
+.playerDetailOverlay.hidden{display:none}
+.playerDetailPanel{position:relative;width:min(440px,96vw);max-height:90vh;overflow:auto;background:#2b0030;color:#fff;border-radius:18px;padding:18px;box-shadow:0 24px 70px #0008}
+.playerDetailClose{position:absolute;right:12px;top:10px;width:34px;height:34px;border-radius:50%;background:#ffffff18;color:#fff;font-size:24px;line-height:1;z-index:2}
+.playerDetailHead{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;padding:2px 34px 14px 2px}
+.playerDetailHead small{opacity:.75;font-weight:800}
+.playerDetailHead h2{margin:4px 0 0;font-size:28px;line-height:1.05}
+.playerDetailHead img{width:82px;height:82px;object-fit:contain;object-position:center bottom;background:#48004f;border-radius:14px}
+.playerDetailBox{background:#39003f;border:1px solid #ffffff0f;border-radius:16px;padding:15px;margin-top:10px}
+.playerDetailBox h3{margin:0 0 13px;font-size:17px}
+.playerDetailMatch{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.detailClub{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;min-width:0}
+.detailClub.away{justify-content:flex-end}
+.detailClub img{width:26px;height:26px;object-fit:contain;flex:0 0 26px}
+.detailClub span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detailScore{font-size:24px;white-space:nowrap}
+.detailStatus{text-align:center;margin-top:8px;font-size:12px;font-weight:900}
+.pointsHead,.pointBreakRow{display:grid;grid-template-columns:1fr 70px 80px;align-items:center;gap:8px}
+.pointsHead{font-size:11px;opacity:.65;padding:4px 0 8px}
+.pointBreakRow{padding:12px 0;border-bottom:1px solid #ffffff26;font-size:13px}
+.pointBreakRow span:nth-child(2),.pointsHead span:nth-child(2){text-align:center}
+.pointBreakRow b,.pointsHead span:nth-child(3){text-align:right}
+.pointsTotal{display:flex;justify-content:space-between;align-items:center;padding-top:14px;font-size:15px}
+.detailCaptainBtn{width:100%;margin-top:12px;padding:12px;border-radius:12px;background:#00ff87;color:#25002c}
+.marketPlayerInfo{cursor:pointer}
+@media(max-width:520px){
+ .playerDetailPanel{width:100%;padding:15px;border-radius:15px}
+ .playerDetailHead h2{font-size:23px}
+ .playerDetailHead img{width:68px;height:68px}
+ .detailClub{font-size:10px}
+ .detailClub img{width:22px;height:22px;flex-basis:22px}
+ .detailScore{font-size:20px}
+}
