@@ -1,0 +1,5 @@
+import { db } from 'hatchable';
+export const access='admin';
+export const methods=['GET','POST'];
+function points(x){return (x.goals||0)*5+(x.assists||0)*3+(x.clean_sheet?4:0)+Math.floor((x.saves||0)/3)-(x.yellow_cards||0)-(x.red_cards||0)*3-(x.own_goals||0)*2}
+export default async function(req,res){if(req.method==='GET'){const {rows}=await db.query('SELECT * FROM fantasy_match_stats ORDER BY created_at DESC LIMIT 100');return res.json({school_day:3,stats:rows})}const x=req.body||{};const fp=points(x);const {rows}=await db.query('INSERT INTO fantasy_match_stats(school_day,player_name,goals,assists,clean_sheet,saves,yellow_cards,red_cards,own_goals,fantasy_points) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *',[3,String(x.player_name||'').trim(),Number(x.goals)||0,Number(x.assists)||0,!!x.clean_sheet,Number(x.saves)||0,Number(x.yellow_cards)||0,Number(x.red_cards)||0,Number(x.own_goals)||0,fp]);return res.json(rows[0])}
