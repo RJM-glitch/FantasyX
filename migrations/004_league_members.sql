@@ -1,0 +1,1 @@
+CREATE TABLE fantasy_league_members (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), league_id UUID NOT NULL, user_id TEXT NOT NULL, joined_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE(league_id,user_id))
