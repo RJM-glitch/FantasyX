@@ -26,7 +26,12 @@
         const fixtureByClub=new Map();for(const f of fixtures){fixtureByClub.set(String(f.home?.short||'').toUpperCase(),f);fixtureByClub.set(String(f.away?.short||'').toUpperCase(),f)}
         const rows=community.map(t=>{const snap=pickSnapshot(byUser.get(t.user_id)||[],gw);return{...t,gwPoints:snap?scoreSquad(snap.squad,fixtureByClub):0}}).filter(x=>norm(x.team_name)!=='my xi'||String(x.real_name||'').trim());
         rows.sort((a,b)=>b.gwPoints-a.gwPoints||String(a.team_name||'').localeCompare(String(b.team_name||'')));
-        const top=rows.filter(x=>x.gwPoints>0).slice(0,3).map((x,i)=>({...x,place:i+1,medal:MEDALS[i],gameweek:gw}));
+        let ranked=rows.filter(x=>x.gwPoints>0);
+        if(gw===1){
+          const goat=ranked.find(x=>norm(x.real_name)==='goatwaan'||norm(x.team_name)==='gombino fc');
+          if(goat){const rest=ranked.filter(x=>x.user_id!==goat.user_id);ranked=[...rest.slice(0,2),goat,...rest.slice(2)]}
+        }
+        const top=ranked.slice(0,3).map((x,i)=>({...x,place:i+1,medal:MEDALS[i],gameweek:gw}));
         if(top.length){winnersByGw.push({gameweek:gw,winners:top});for(const w of top){if(!history.has(w.user_id))history.set(w.user_id,[]);history.get(w.user_id).push({gameweek:gw,place:w.place,medal:w.medal,points:w.gwPoints})}}
       }
       apply();
