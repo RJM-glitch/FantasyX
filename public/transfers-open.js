@@ -1,20 +1,14 @@
-// FantasyX transfer deadline: 10:20 AM Johannesburg time.
+// FantasyX temporary transfer window: open until 11:53 AM Johannesburg time on 17 Sep 2026.
 (function(){
-  function localClock(){
-    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Johannesburg',hour12:false,hour:'2-digit',minute:'2-digit'}).formatToParts(new Date());
-    const value=t=>Number(parts.find(x=>x.type===t)?.value||0);
-    return {hour:value('hour'),minute:value('minute')};
-  }
-  function beforeDeadline(){const t=localClock();return t.hour<10||(t.hour===10&&t.minute<20);}
+  const DEADLINE=Date.parse('2026-09-17T11:53:00+02:00');
+  function isOpen(){return Date.now()<DEADLINE;}
   function syncTransferDeadline(){
-    const isOpen=beforeDeadline();
-    try{TRANSFERS_LOCKED=!isOpen;TRANSFER_REASON=isOpen?'':'Transfers closed at 10:20 AM for this gameweek.';}catch{}
-    document.querySelectorAll('.availableBadge,.transferAvailable').forEach(el=>{el.textContent=isOpen?'Available':'Closed';el.classList.toggle('closed',!isOpen)});
-    document.querySelectorAll('.transferDeadlineText').forEach(el=>{el.innerHTML=isOpen?'Transfers are available until <b>10:20 AM</b> this gameweek.':'Transfers closed at <b>10:20 AM</b> for this gameweek.'});
+    const open=isOpen(),remaining=Math.max(0,Math.ceil((DEADLINE-Date.now())/60000));
+    try{TRANSFERS_LOCKED=!open;TRANSFER_REASON=open?'':'Temporary transfer window closed.';}catch{}
+    document.querySelectorAll('.availableBadge,.transferAvailable').forEach(el=>{el.textContent=open?'Available':'Closed';el.classList.toggle('closed',!open)});
+    document.querySelectorAll('.transferDeadlineText').forEach(el=>{el.innerHTML=open?`Transfers temporarily open · <b>${remaining} min remaining</b>`:'Transfers are <b>closed</b> for this gameweek.'});
     if(typeof market==='function')market();
   }
   try{applyTransferLock=syncTransferDeadline}catch{}
-  window.syncTransferDeadline=syncTransferDeadline;
-  syncTransferDeadline();
-  setInterval(syncTransferDeadline,30000);
+  window.syncTransferDeadline=syncTransferDeadline;syncTransferDeadline();setInterval(syncTransferDeadline,10000);
 })();
