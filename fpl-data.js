@@ -3,10 +3,10 @@ async function cached(key,url,ttl){const now=Date.now(),old=MEM.get(key);if(old?
 export const getBoot=()=>cached('boot',BOOT,300000);export function teams(d){return new Map(d.teams.map(t=>[t.id,{id:t.id,name:t.name,short:t.short_name,code:t.code,badge:`https://resources.premierleague.com/premierleague/badges/70/t${t.code}.png`}]))}
 const MATCH_SLOTS=[
  {label:'8:30 AM – 9:20 AM',start:'08:30',end:'09:20'},
- {label:'9:40 AM – 10:30 AM',start:'09:40',end:'10:30'},
- {label:'10:50 AM – 11:40 AM',start:'10:50',end:'11:40'},
- {label:'12:00 PM – 12:50 PM',start:'12:00',end:'12:50'},
- {label:'1:10 PM – 2:00 PM',start:'13:10',end:'14:00'}
+ {label:'9:45 AM – 10:35 AM',start:'09:45',end:'10:35'},
+ {label:'11:00 AM – 11:50 AM',start:'11:00',end:'11:50'},
+ {label:'12:15 PM – 1:05 PM',start:'12:15',end:'13:05'},
+ {label:'1:40 PM – 2:30 PM',start:'13:40',end:'14:30'}
 ];
 function ymd(d){return d.toISOString().slice(0,10)}function addDays(date,n){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return ymd(d)}
 function gameweekDate(gw){return addDays('2026-09-18',Math.max(0,Number(gw)-1))}
