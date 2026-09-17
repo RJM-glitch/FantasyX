@@ -4,8 +4,6 @@ export const getBoot=()=>cached('boot',BOOT,300000);
 export function teams(d){return new Map(d.teams.map(t=>[t.id,{id:t.id,name:t.name,short:t.short_name,code:t.code,badge:`https://resources.premierleague.com/premierleague/badges/70/t${t.code}.png`}]))}
 
 const MATCH_SLOTS=[
- {label:'7:50 AM – 8:40 AM',start:'07:50',end:'08:40'},
- {label:'8:40 AM – 9:30 AM',start:'08:40',end:'09:30'},
  {label:'9:30 AM – 10:20 AM',start:'09:30',end:'10:20'},
  {label:'11:10 AM – 12:00 PM',start:'11:10',end:'12:00'},
  {label:'12:00 PM – 12:50 PM',start:'12:00',end:'12:50'},
