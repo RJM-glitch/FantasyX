@@ -1,0 +1,37 @@
+name: Patch FantasyX manager favorites
+on:
+  push:
+    paths:
+      - '.github/workflows/favorites-profile-patch.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch profile API
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('server.js')
+          s=p.read_text()
+          old="""   p_real_name:String(req.body?.real_name||''),
+   p_team_name:String(req.body?.team_name||'My XI')
+"""
+          new="""   p_real_name:String(req.body?.real_name||''),
+   p_team_name:String(req.body?.team_name||'My XI'),
+   p_favorite_team:String(req.body?.favorite_team||''),
+   p_favorite_player:String(req.body?.favorite_player||'')
+"""
+          if old not in s:
+              raise SystemExit('Expected profile API block not found')
+          p.write_text(s.replace(old,new,1))
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "FantasyX Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add server.js
+          git commit -m "Add favorite team and player profile fields"
+          git push
