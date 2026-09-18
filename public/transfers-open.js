@@ -8,7 +8,7 @@
       const sec=Math.max(0,Math.ceil((SPECIAL_UNTIL-now)/1000)),m=Math.floor(sec/60),s=String(sec%60).padStart(2,'0');
       return{open:true,targetGw:2,penalty:false,special:true,text:`Special transfer window OPEN · ${m}:${s} left · GW2 transfers are free · new players do not score GW2 points.`};
     }
-    const d=Math.max(0,Math.floor((now-FIRST)/DAY)),gw=Math.min(38,2+d),start=FIRST+d*DAY+8.5*3600000,end=FIRST+d*DAY+14.5*3600000;
+    const d=Math.max(0,Math.floor((now-FIRST)/DAY)),gw=Math.min(38,2+d),start=FIRST+d*DAY+(gw===2?13:8.5)*3600000,end=FIRST+d*DAY+(gw===2?(17*3600000+35*60000):14.5*3600000);
     if(now>=start&&now<end)return{open:false,targetGw:gw,penalty:gw>=3,special:false,text:`Transfers are closed while GW${gw} is being played.`};
     const target=now<start?gw:Math.min(38,gw+1),penalty=target>=3;
     return{open:true,targetGw:target,penalty,special:false,text:penalty?`Transfers are OPEN for GW${target} · each player brought in costs <b>-4 points</b>.`:`Transfers are OPEN for GW${target}.`};
