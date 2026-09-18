@@ -1,6 +1,6 @@
 // FantasyX transfer windows. Special 10-minute GW2 window; transfers cost -4 each.
 (function(){
-  const FIRST=Date.parse('2026-09-18T00:00:00+02:00'),DAY=86400000,SPECIAL_UNTIL=Date.parse('2026-09-18T12:01:00+02:00');
+  const FIRST=Date.parse('2026-09-18T00:00:00+02:00'),DAY=86400000,SPECIAL_UNTIL=Date.parse('2026-09-18T12:03:00+02:00');
   function state(now=Date.now()){
     const firstKickoff=Date.parse('2026-09-18T08:30:00+02:00');
     if(now<firstKickoff)return{open:true,targetGw:2,penalty:false,special:false,text:'Transfers are OPEN until GW2 kickoff.'};
