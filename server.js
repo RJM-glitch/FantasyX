@@ -183,4 +183,4 @@ app.get('/api/baller-table',async(req,res)=>{try{const table=await liveManagerRo
 app.get('/api/club-table',async(req,res)=>{try{res.json({table:await standings()})}catch{res.status(502).json({table:[]})}});
 app.use((req,res)=>res.sendFile(process.cwd()+'/public/index.html'));
 const port=process.env.PORT||3000;
-app.listen(port,()=>{console.log('FantasyX listening on '+port);warm();setTimeout(async()=>{try{const b=await getBoot(),want=new Set(['Frimpong','Cunha','Guessand','Schade','Strand Larsen','Evanilson','Mykolenko','Castagne','King']);console.log('FXRESTORE '+JSON.stringify((b.elements||[]).filter(p=>want.has(p.web_name)).map(p=>({id:p.id,name:p.web_name,team:p.team,type:p.element_type,cost:p.now_cost/10}))));}catch(e){console.log('FXRESTORE_ERR '+String(e.message))}},1800)});
+app.listen(port,()=>{console.log('FantasyX listening on '+port);warm()});
