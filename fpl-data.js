@@ -10,14 +10,11 @@ const MATCH_SLOTS=[
  {label:'1:40 PM – 2:30 PM',start:'13:40',end:'14:30'}
 ];
 const GW2_RESET_SLOTS=[
- {label:'2:20 PM – 3:20 PM',start:'14:20',end:'15:20'},
- {label:'3:45 PM – 4:45 PM',start:'15:45',end:'16:45'},
- {label:'5:10 PM – 6:10 PM',start:'17:10',end:'18:10'},
- {label:'6:35 PM – 7:35 PM',start:'18:35',end:'19:35'}
+ {label:'2:20 PM – 3:15 PM',start:'14:20',end:'15:15'}
 ];
 function ymd(d){return d.toISOString().slice(0,10)}function addDays(date,n){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return ymd(d)}
 function gameweekDate(gw){return Number(gw)===1?'2026-09-17':addDays('2026-09-18',Math.max(0,Number(gw)-2))}
-function scheduleFor(gw,count){const date=gameweekDate(gw);if(Number(gw)===1)return Array.from({length:count},()=>({date,...GW1_SLOT}));if(Number(gw)===2)return Array.from({length:count},(_,i)=>({date,...GW2_RESET_SLOTS[i<4?0:1+Math.floor((i-4)/2)]}));return Array.from({length:count},(_,i)=>({date,...MATCH_SLOTS[Math.min(MATCH_SLOTS.length-1,Math.floor(i/2))]}))}
+function scheduleFor(gw,count){const date=gameweekDate(gw);if(Number(gw)===1)return Array.from({length:count},()=>({date,...GW1_SLOT}));if(Number(gw)===2)return Array.from({length:count},()=>({date,...GW2_RESET_SLOTS[0]}));return Array.from({length:count},(_,i)=>({date,...MATCH_SLOTS[Math.min(MATCH_SLOTS.length-1,Math.floor(i/2))]}))}
 function displayDate(date){return new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Johannesburg',weekday:'short',day:'2-digit',month:'short'}).format(new Date(date+'T12:00:00+02:00'))}
 function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}function hashSeed(...xs){let h=2166136261;for(const x of xs)for(const c of String(x)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
 function versionFor(gw){return Number(gw)===1?'FantasyX-R2':Number(gw)===2?'FantasyX-R4-RESET':'FantasyX-R3'}
