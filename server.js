@@ -140,7 +140,7 @@ async function managerScoreData(){
       if(g.fixtures.some(f=>f.status!=='Upcoming')){try{await rpc('fx_lock_gameweek_squads',{p_gameweek:gw});locks=await rpc('fx_public_locked_squads',{})}catch{}}
       break;
     }
-    for(const p of profiles||[]){const locked=exactSnapshot(locks,p.user_id,gw),snap=locked||exactSnapshot(snaps,p.user_id,gw);if(snap)historical.set(String(p.user_id),(historical.get(String(p.user_id))||0)+scoreStoredSquad(snap.squad,g.points,g.info))}
+    for(const p of profiles||[]){const locked=exactSnapshot(locks,p.user_id,gw),saved=exactSnapshot(snaps,p.user_id,gw),snap=Array.isArray(locked?.squad)&&locked.squad.length?locked:saved;if(snap)historical.set(String(p.user_id),(historical.get(String(p.user_id))||0)+scoreStoredSquad(snap.squad,g.points,g.info))}
     if(gw===38){currentGw=38;currentPoints=new Map();currentInfo=new Map()}
   }
   const penaltyByUser=new Map();for(const x of penalties||[])penaltyByUser.set(String(x.user_id),(penaltyByUser.get(String(x.user_id))||0)+Number(x.penalty_points||0));
@@ -150,10 +150,10 @@ async function managerScoreData(){
 async function liveManagerRows(){
   const d=await managerScoreData();
   return d.profiles.filter(p=>String(p.real_name||'').trim()||String(p.team_name||'').trim().toLowerCase()!=='my xi').map(p=>{
-    const uid=String(p.user_id),baseSquad=d.squads.filter(s=>String(s.user_id)===uid),locked=exactSnapshot(d.locks,p.user_id,d.currentGw),scoringSquad=locked?.squad||baseSquad,detail=scoreStoredSquadDetailed(scoringSquad,d.currentPoints,d.currentInfo),scoringIds=new Set((Array.isArray(scoringSquad)?scoringSquad:[]).map(entryId)),subIn=new Set(detail.autosubs.map(x=>x.in)),subOut=new Set(detail.autosubs.map(x=>x.out));
+    const uid=String(p.user_id),baseSquad=d.squads.filter(s=>String(s.user_id)===uid),locked=exactSnapshot(d.locks,p.user_id,d.currentGw),saved=exactSnapshot(await rpc('fx_public_gameweek_squads',{}),p.user_id,d.currentGw),lockedUsable=Array.isArray(locked?.squad)&&locked.squad.length>0,scoringSquad=lockedUsable?locked.squad:(Array.isArray(saved?.squad)&&saved.squad.length?saved.squad:baseSquad),detail=scoreStoredSquadDetailed(scoringSquad,d.currentPoints,d.currentInfo),scoringIds=new Set((Array.isArray(scoringSquad)?scoringSquad:[]).map(entryId)),subIn=new Set(detail.autosubs.map(x=>x.in)),subOut=new Set(detail.autosubs.map(x=>x.out));
     const squad=baseSquad.map(s=>{const id=Number(s.player_id),base=Number(d.currentPoints.get(id)||0),eligible=scoringIds.has(id),active=eligible&&detail.activeIds.has(id),m=active?(id===detail.captainId?2:1):0;return{...s,points:eligible?base:0,minutes:eligible?Number(d.currentInfo.get(id)?.minutes||0):0,scoring_points:eligible?base*m:0,multiplier:m,autosubbed_in:eligible&&subIn.has(id),autosubbed_out:eligible&&subOut.has(id),ineligible_current_gw:!eligible}});
     const historicalPoints=Number(d.historical.get(uid)||0),gameweekPoints=detail.total,transferPenalty=Number(d.penaltyByUser.get(uid)||0),live_points=Math.max(0,historicalPoints+gameweekPoints-transferPenalty);
-    return{...p,squad,historical_points:historicalPoints,gameweek_points:gameweekPoints,transfer_penalty:transferPenalty,current_gameweek:d.currentGw,gameweek_squad_locked:Boolean(locked),auto_substitutions:detail.autosubs,live_points,total_points:live_points};
+    return{...p,squad,historical_points:historicalPoints,gameweek_points:gameweekPoints,transfer_penalty:transferPenalty,current_gameweek:d.currentGw,gameweek_squad_locked:lockedUsable,auto_substitutions:detail.autosubs,live_points,total_points:live_points};
   }).sort((a,b)=>b.live_points-a.live_points||String(a.team_name||'').localeCompare(String(b.team_name||''))).map((x,i)=>({...x,rank:i+1}));
 }
 
