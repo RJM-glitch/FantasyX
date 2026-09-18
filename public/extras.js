@@ -1,7 +1,7 @@
 const FX_API='/api';
 let fixtureData=[],FOOTBALL_INFLIGHT=new Map(),STATS_CACHE={at:0,data:null,promise:null};
 function currentGameweek(){const y=new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Johannesburg'});if(y<='2026-09-17')return 1;const ms=Date.parse(y+'T00:00:00Z')-Date.parse('2026-09-18T00:00:00Z');return Math.max(2,Math.min(38,2+Math.floor(ms/86400000)))}
-function latestCompletedGameweek(){const n=Date.now();if(n<Date.parse('2026-09-17T14:15:00+02:00'))return 0;if(n<Date.parse('2026-09-18T17:35:00+02:00'))return 1;const base=Date.parse('2026-09-18T17:35:00+02:00'),d=Math.floor((n-base)/86400000);return Math.max(1,Math.min(38,2+d))}
+function latestCompletedGameweek(){const n=Date.now();if(n<Date.parse('2026-09-17T14:15:00+02:00'))return 0;if(n<Date.parse('2026-09-18T19:35:00+02:00'))return 1;const base=Date.parse('2026-09-18T19:35:00+02:00'),d=Math.floor((n-base)/86400000);return Math.max(1,Math.min(38,2+d))}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function movedOut(p){const status=String(p?.availabilityStatus||'').toLowerCase(),news=String(p?.injuryNews||'').toLowerCase();return status==='u'||/\b(transferred to|left the club|joined .* permanently|loaned to)\b/.test(news)}
 function activePlayerIds(){try{return new Set((typeof P!=='undefined'?P:[]).filter(p=>!movedOut(p)).map(p=>Number(p.id)))}catch{return new Set()}}
