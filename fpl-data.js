@@ -9,12 +9,18 @@ const MATCH_SLOTS=[
  {label:'12:15 PM – 1:05 PM',start:'12:15',end:'13:05'},
  {label:'1:40 PM – 2:30 PM',start:'13:40',end:'14:30'}
 ];
+const GW2_RESET_SLOTS=[
+ {label:'1:00 PM – 1:50 PM',start:'13:00',end:'13:50'},
+ {label:'2:15 PM – 3:05 PM',start:'14:15',end:'15:05'},
+ {label:'3:30 PM – 4:20 PM',start:'15:30',end:'16:20'},
+ {label:'4:45 PM – 5:35 PM',start:'16:45',end:'17:35'}
+];
 function ymd(d){return d.toISOString().slice(0,10)}function addDays(date,n){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return ymd(d)}
 function gameweekDate(gw){return Number(gw)===1?'2026-09-17':addDays('2026-09-18',Math.max(0,Number(gw)-2))}
-function scheduleFor(gw,count){const date=gameweekDate(gw);if(Number(gw)===1)return Array.from({length:count},()=>({date,...GW1_SLOT}));return Array.from({length:count},(_,i)=>({date,...MATCH_SLOTS[Math.min(MATCH_SLOTS.length-1,Math.floor(i/2))]}))}
+function scheduleFor(gw,count){const date=gameweekDate(gw);if(Number(gw)===1)return Array.from({length:count},()=>({date,...GW1_SLOT}));if(Number(gw)===2)return Array.from({length:count},(_,i)=>({date,...GW2_RESET_SLOTS[i<4?0:1+Math.floor((i-4)/2)]}));return Array.from({length:count},(_,i)=>({date,...MATCH_SLOTS[Math.min(MATCH_SLOTS.length-1,Math.floor(i/2))]}))}
 function displayDate(date){return new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Johannesburg',weekday:'short',day:'2-digit',month:'short'}).format(new Date(date+'T12:00:00+02:00'))}
 function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}function hashSeed(...xs){let h=2166136261;for(const x of xs)for(const c of String(x)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-function versionFor(gw){return Number(gw)===1?'FantasyX-R2':'FantasyX-R3'}
+function versionFor(gw){return Number(gw)===1?'FantasyX-R2':Number(gw)===2?'FantasyX-R4-RESET':'FantasyX-R3'}
 function randomFixtures(teamList,gw){const version=versionFor(gw),rng=mulberry32(hashSeed(version,gw,'fixtures')),arr=[...teamList];for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}const out=[],prefix=Number(gw)===1?'FXR2':'FXR3';for(let i=0;i<arr.length;i+=2){let home=arr[i],away=arr[i+1];if(rng()<.5)[home,away]=[away,home];out.push({id:`${prefix}-${gw}-${i/2+1}`,team_h:home.id,team_a:away.id})}return out}
 function scoreFor(f,gw){const rng=mulberry32(hashSeed(versionFor(gw),gw,f.team_h,f.team_a,'score')),goals=()=>{const r=rng();return r<.24?0:r<.55?1:r<.79?2:r<.93?3:r<.985?4:5};return[goals(),goals()]}
 function liveStatus(date,start,end){const a=Date.parse(`${date}T${start}:00+02:00`),b=Date.parse(`${date}T${end}:00+02:00`),n=Date.now();if(n<a)return{status:'Upcoming',minute:0};if(n>=b)return{status:'FT',minute:90};return{status:'LIVE',minute:Math.max(1,Math.min(90,Math.floor(((n-a)/(b-a))*90)))}}
