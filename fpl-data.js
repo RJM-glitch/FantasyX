@@ -10,10 +10,10 @@ const MATCH_SLOTS=[
  {label:'1:40 PM – 2:30 PM',start:'13:40',end:'14:30'}
 ];
 const GW2_RESET_SLOTS=[
- {label:'1:00 PM – 1:50 PM',start:'13:00',end:'13:50'},
- {label:'2:15 PM – 3:05 PM',start:'14:15',end:'15:05'},
- {label:'3:30 PM – 4:20 PM',start:'15:30',end:'16:20'},
- {label:'4:45 PM – 5:35 PM',start:'16:45',end:'17:35'}
+ {label:'2:20 PM – 3:20 PM',start:'14:20',end:'15:20'},
+ {label:'3:45 PM – 4:45 PM',start:'15:45',end:'16:45'},
+ {label:'5:10 PM – 6:10 PM',start:'17:10',end:'18:10'},
+ {label:'6:35 PM – 7:35 PM',start:'18:35',end:'19:35'}
 ];
 function ymd(d){return d.toISOString().slice(0,10)}function addDays(date,n){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return ymd(d)}
 function gameweekDate(gw){return Number(gw)===1?'2026-09-17':addDays('2026-09-18',Math.max(0,Number(gw)-2))}
