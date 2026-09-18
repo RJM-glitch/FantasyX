@@ -1,13 +1,13 @@
 // FantasyX transfer windows. Special 10-minute GW2 window; transfers cost -4 each.
 (function(){
-  const FIRST=Date.parse('2026-09-18T00:00:00+02:00'),DAY=86400000,SPECIAL_UNTIL=Date.parse('2026-09-18T12:56:14+02:00');
+  const FIRST=Date.parse('2026-09-18T00:00:00+02:00'),DAY=86400000,SPECIAL_UNTIL=Date.parse('2026-09-18T14:17:20+02:00');
   function state(now=Date.now()){
     const firstKickoff=Date.parse('2026-09-18T14:20:00+02:00');
-    if(now<firstKickoff)return{open:true,targetGw:2,penalty:false,special:false,text:'Transfers are OPEN until GW2 kickoff.'};
     if(now<SPECIAL_UNTIL){
       const sec=Math.max(0,Math.ceil((SPECIAL_UNTIL-now)/1000)),m=Math.floor(sec/60),s=String(sec%60).padStart(2,'0');
-      return{open:true,targetGw:2,penalty:false,special:true,text:`Special transfer window OPEN · ${m}:${s} left · GW2 transfers are free · new players do not score GW2 points.`};
+      return{open:true,targetGw:2,penalty:false,special:true,text:`Special transfer window OPEN · ${m}:${s} left · GW2 transfers are free.`};
     }
+    if(now<firstKickoff)return{open:false,targetGw:2,penalty:false,special:false,text:'Special transfer window is closed until GW2 kickoff.'};
     const d=Math.max(0,Math.floor((now-FIRST)/DAY)),gw=Math.min(38,2+d),start=FIRST+d*DAY+(gw===2?(14*3600000+20*60000):8.5*3600000),end=FIRST+d*DAY+(gw===2?(19*3600000+35*60000):14.5*3600000);
     if(now>=start&&now<end)return{open:false,targetGw:gw,penalty:gw>=3,special:false,text:`Transfers are closed while GW${gw} is being played.`};
     const target=now<start?gw:Math.min(38,gw+1),penalty=target>=3;
