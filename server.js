@@ -96,7 +96,7 @@ function trackTransferActivity(rows){
   for(const uid of [...PREV_SQUADS.keys()])if(!grouped.has(uid))PREV_SQUADS.delete(uid);
 }
 
-const SPECIAL_TRANSFER_UNTIL=Date.parse('2026-09-18T12:01:00+02:00');
+const SPECIAL_TRANSFER_UNTIL=Date.parse('2026-09-18T12:03:00+02:00');
 function transferWindowState(now=Date.now()){
   const firstKickoff=Date.parse('2026-09-18T08:30:00+02:00'),baseMidnight=Date.parse('2026-09-18T00:00:00+02:00'),day=86400000;
   if(now<firstKickoff)return{open:true,targetGw:2,penalty:false,special:false,message:'Transfers are open until Gameweek 2 kickoff.'};
