@@ -96,12 +96,12 @@ function trackTransferActivity(rows){
   for(const uid of [...PREV_SQUADS.keys()])if(!grouped.has(uid))PREV_SQUADS.delete(uid);
 }
 
-const SPECIAL_TRANSFER_UNTIL=0;
+const SPECIAL_TRANSFER_UNTIL=Date.parse('2026-09-21T11:06:00+02:00');
 function transferWindowState(now=Date.now()){
   const firstKickoff=Date.parse('2026-09-18T14:20:00+02:00'),baseMidnight=Date.parse('2026-09-18T00:00:00+02:00'),day=86400000;
-  if(now<firstKickoff&&now<SPECIAL_TRANSFER_UNTIL)return{open:true,targetGw:2,penalty:false,special:true,closes_at:new Date(SPECIAL_TRANSFER_UNTIL).toISOString(),message:'Special 3-minute transfer window is OPEN. GW2 transfers are free.'};
-  if(now<firstKickoff)return{open:false,targetGw:2,penalty:false,special:false,message:'Transfers are closed.'};
   const dayIndex=Math.max(0,Math.floor((now-baseMidnight)/day)),todayGw=Math.min(38,2+dayIndex),start=baseMidnight+dayIndex*day+(todayGw===2?(14*3600000+20*60000):8.5*3600000),end=baseMidnight+dayIndex*day+(todayGw===2?(15*3600000+15*60000):14.5*3600000);
+  if(now<SPECIAL_TRANSFER_UNTIL)return{open:true,targetGw:todayGw,penalty:false,special:true,closes_at:new Date(SPECIAL_TRANSFER_UNTIL).toISOString(),message:`Special 10-minute transfer window is OPEN for Gameweek ${todayGw}. Transfers are free.`};
+  if(now<firstKickoff)return{open:false,targetGw:2,penalty:false,special:false,message:'Transfers are closed.'};
   if(now>=start&&now<end)return{open:false,targetGw:todayGw,penalty:todayGw>=3,special:false,message:`Transfers are locked while Gameweek ${todayGw} is being played.`};
   const targetGw=now<start?todayGw:Math.min(38,todayGw+1);
   return{open:true,targetGw,penalty:targetGw>=3,special:false,message:targetGw>=3?`Transfers are open for Gameweek ${targetGw}. Each player brought in costs -4 points.`:`Transfers are open for Gameweek ${targetGw}.`};
