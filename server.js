@@ -96,7 +96,7 @@ function trackTransferActivity(rows){
   for(const uid of [...PREV_SQUADS.keys()])if(!grouped.has(uid))PREV_SQUADS.delete(uid);
 }
 
-const SPECIAL_TRANSFER_UNTIL=Date.parse('2026-09-21T11:06:00+02:00');
+const SPECIAL_TRANSFER_UNTIL=Date.parse('2026-09-21T11:07:30+02:00');
 function transferWindowState(now=Date.now()){
   const firstKickoff=Date.parse('2026-09-18T14:20:00+02:00'),baseMidnight=Date.parse('2026-09-18T00:00:00+02:00'),day=86400000;
   const dayIndex=Math.max(0,Math.floor((now-baseMidnight)/day)),todayGw=Math.min(38,2+dayIndex),start=baseMidnight+dayIndex*day+(todayGw===2?(14*3600000+20*60000):8.5*3600000),end=baseMidnight+dayIndex*day+(todayGw===2?(15*3600000+15*60000):14.5*3600000);
