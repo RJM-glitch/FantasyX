@@ -67,9 +67,6 @@
     }
   }
   const style=document.createElement('style');
-  style.textContent='.fxMedals{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:5px}.fxMedals>span{display:inline-flex;align-items:center;gap:2px;font-size:16px}.fxMedals small{font-size:9px;color:#777}.fxLeagueMedals{display:inline-flex;margin:0 6px}.gwMedalTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff8dc}.gwMedalTitle small{color:#777}.gwPodium{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid #eee}.gwPodium>b{min-width:44px}.gwPodium span{display:inline-flex;gap:5px;align-items:center}.gwPodium small{color:#777}';
-  document.head.appendChild(style);
-  const style=document.createElement('style');
   style.textContent='.medalFilters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.medalFilter{padding:9px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}.medalFilter.active{font-weight:700}.medalSectionTitle{font-size:18px;font-weight:700;margin-bottom:10px}.medalManager{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid #eee}.medalManager>div:first-child{display:flex;flex-direction:column;gap:3px}.medalManager small{color:#777}.medalList{display:flex;gap:10px;flex-wrap:wrap}.medalList span{display:inline-flex;align-items:center;gap:3px}.medalGw{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #eee}.medalGw>b{min-width:44px}.medalGw span{display:inline-flex;gap:4px;align-items:center}.medalGw small{color:#777}';
   document.head.appendChild(style);
   document.addEventListener('click',e=>{
