@@ -1,7 +1,7 @@
 // FantasyX gameweek medals: awards 🥇🥈🥉 from completed FantasyX gameweeks.
 (function(){
   const SUPA='https://gjkivetatcnskoszsdzf.supabase.co';
-  const KEY='sb_publishable_x-etGDngNtgDlY4d4gJsXg_FrbplfY2';
+  const KEY='sb_publishable_x-etGDngNtgDlY4d4gJsXg_Frbplf0Y2';
   const MEDALS=['🥇','🥈','🥉'];
   const POS={GK:1,DEF:2,MID:3,FWD:4};
   let history=new Map(),winnersByGw=[],community=[];
@@ -37,12 +37,51 @@
       apply();
     }catch(e){console.warn('FantasyX medals unavailable',e)}
   }
-  function medalsHTML(userId){const m=history.get(userId)||[];return m.length?`<span class="fxMedals" title="Gameweek medals">${m.map(x=>`<span title="GW${x.gameweek}: ${x.points} pts">${x.medal}<small>GW${x.gameweek}</small></span>`).join('')}</span>`:''}
-  function apply(){
-    document.querySelectorAll('.managerCard').forEach((card,i)=>{const t=community[i];if(!t)return;card.querySelector('.fxMedals')?.remove();const host=card.querySelector('.managerIdentityText');if(host)host.insertAdjacentHTML('beforeend',medalsHTML(t.user_id))});
-    const rows=[...document.querySelectorAll('.leagueManagerRow')];for(const row of rows){const team=norm(row.querySelector('strong')?.textContent),t=community.find(x=>norm(x.team_name)===team);if(!t)continue;row.querySelector('.fxLeagueMedals')?.remove();const html=medalsHTML(t.user_id).replace('class="fxMedals"','class="fxMedals fxLeagueMedals"');if(html)row.querySelector('strong')?.insertAdjacentHTML('afterend',html)}
-    const table=document.getElementById('ballerTable');if(table&&winnersByGw.length){let box=document.getElementById('gwMedalHistory');if(!box){box=document.createElement('div');box.id='gwMedalHistory';table.parentElement?.insertBefore(box,table)}box.innerHTML='<div class="gwMedalTitle"><b>🏅 Gameweek medals</b><small>Top 3 each completed gameweek</small></div>'+winnersByGw.map(g=>`<div class="gwPodium"><b>GW${g.gameweek}</b>${g.winners.map(w=>`<span>${w.medal} ${String(w.team_name||'Team')} <small>${w.gwPoints} pts</small></span>`).join('')}</div>`).join('')}
+  function medalsHTML(userId,league=false){
+    const m=history.get(userId)||[];
+    if(!m.length)return '';
+    const cls=league?'fxMedals fxLeagueMedals':'fxMedals';
+    return '<span class="'+cls+'" title="Gameweek medals">'+m.map(x=>'<span title="GW'+x.gameweek+': '+x.points+' pts">'+x.medal+'<small>GW'+x.gameweek+'</small></span>').join('')+'</span>';
   }
-  const style=document.createElement('style');style.textContent='.fxMedals{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:5px}.fxMedals>span{display:inline-flex;align-items:center;gap:2px;font-size:16px}.fxMedals small{font-size:9px;color:#777}.fxLeagueMedals{display:inline-flex;margin:0 6px}.gwMedalTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff8dc}.gwMedalTitle small{color:#777}.gwPodium{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid #eee}.gwPodium>b{min-width:44px}.gwPodium span{display:inline-flex;gap:5px;align-items:center}.gwPodium small{color:#777}';document.head.appendChild(style);
+  function medalsKey(userId){return (history.get(userId)||[]).map(x=>x.gameweek+':'+x.place+':'+x.points).join('|')}
+  function setStableMedals(host,userId,league=false){
+    if(!host)return;
+    const key=medalsKey(userId);
+    const selector=league?'.fxLeagueMedals':'.fxMedals:not(.fxLeagueMedals)';
+    const existing=host.querySelector(selector);
+    if(existing && existing.dataset.medalKey===key)return;
+    if(existing)existing.remove();
+    const html=medalsHTML(userId,league);
+    if(html)host.insertAdjacentHTML('beforeend',html);
+    const added=host.querySelector(selector);
+    if(added)added.dataset.medalKey=key;
+  }
+  function apply(){
+    // Keep existing medal DOM in place during the 3-second UI refresh; removing/re-adding it caused flicker.
+    document.querySelectorAll('.managerCard').forEach((card,i)=>{
+      const t=community[i];if(!t)return;
+      setStableMedals(card.querySelector('.managerIdentityText'),t.user_id,false);
+    });
+    const rows=[...document.querySelectorAll('.leagueManagerRow')];
+    for(const row of rows){
+      const team=norm(row.querySelector('strong')?.textContent),t=community.find(x=>norm(x.team_name)===team);
+      if(!t)continue;
+      setStableMedals(row.querySelector('strong')?.parentElement||row,t.user_id,true);
+    }
+    const table=document.getElementById('ballerTable');
+    if(table&&winnersByGw.length){
+      let box=document.getElementById('gwMedalHistory');
+      if(!box){box=document.createElement('div');box.id='gwMedalHistory';table.parentElement?.insertBefore(box,table)}
+      const key=winnersByGw.map(g=>g.gameweek+':'+g.winners.map(w=>w.user_id+':'+w.place+':'+w.gwPoints).join(',')).join('|');
+      if(box.dataset.renderKey!==key){
+        box.innerHTML='<div class="gwMedalTitle"><b>🏅 Gameweek medals</b><small>Top 3 each completed gameweek</small></div>'+
+          winnersByGw.map(g=>'<div class="gwPodium"><b>GW'+g.gameweek+'</b>'+g.winners.map(w=>'<span>'+w.medal+' '+String(w.team_name||'Team')+' <small>'+w.gwPoints+' pts</small></span>').join('')+'</div>').join('');
+        box.dataset.renderKey=key;
+      }
+    }
+  }
+  const style=document.createElement('style');
+  style.textContent='.fxMedals{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:5px}.fxMedals>span{display:inline-flex;align-items:center;gap:2px;font-size:16px}.fxMedals small{font-size:9px;color:#777}.fxLeagueMedals{display:inline-flex;margin:0 6px}.gwMedalTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff8dc}.gwMedalTitle small{color:#777}.gwPodium{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid #eee}.gwPodium>b{min-width:44px}.gwPodium span{display:inline-flex;gap:5px;align-items:center}.gwPodium small{color:#777}';
+  document.head.appendChild(style);
   window.addEventListener('load',()=>{setTimeout(load,700);setInterval(apply,3000);setInterval(load,60000)});
 })();
