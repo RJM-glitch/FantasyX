@@ -37,51 +37,45 @@
       apply();
     }catch(e){console.warn('FantasyX medals unavailable',e)}
   }
-  function medalsHTML(userId,league=false){
-    const m=history.get(userId)||[];
-    if(!m.length)return '';
-    const cls=league?'fxMedals fxLeagueMedals':'fxMedals';
-    return '<span class="'+cls+'" title="Gameweek medals">'+m.map(x=>'<span title="GW'+x.gameweek+': '+x.points+' pts">'+x.medal+'<small>GW'+x.gameweek+'</small></span>').join('')+'</span>';
-  }
-  function medalsKey(userId){return (history.get(userId)||[]).map(x=>x.gameweek+':'+x.place+':'+x.points).join('|')}
-  function setStableMedals(host,userId,league=false){
-    if(!host)return;
-    const key=medalsKey(userId);
-    const selector=league?'.fxLeagueMedals':'.fxMedals:not(.fxLeagueMedals)';
-    const existing=host.querySelector(selector);
-    if(existing && existing.dataset.medalKey===key)return;
-    if(existing)existing.remove();
-    const html=medalsHTML(userId,league);
-    if(html)host.insertAdjacentHTML('beforeend',html);
-    const added=host.querySelector(selector);
-    if(added)added.dataset.medalKey=key;
+  function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+  function renderMedals(filter='all'){
+    const box=document.getElementById('medalsPanel');
+    if(!box)return;
+    const entries=[...history.entries()].map(([user_id,medals])=>{
+      const t=community.find(x=>x.user_id===user_id)||{};
+      return {user_id,name:t.team_name||t.real_name||'Manager',real:t.real_name||'',medals};
+    }).filter(x=>x.medals.length);
+    let out='';
+    if(filter==='gameweek'){
+      out='<div class="medalSection"><div class="medalSectionTitle">🏆 Gameweek Podiums</div>'+
+        winnersByGw.map(g=>'<div class="medalGw"><b>GW'+g.gameweek+'</b>'+g.winners.map(w=>'<span>'+w.medal+' '+esc(w.team_name||'Team')+' <small>'+w.gwPoints+' pts</small></span>').join('')+'</div>').join('')+
+        (winnersByGw.length?'':'<p>No completed gameweeks yet.</p>')+'</div>';
+    }else{
+      const filtered=entries.map(x=>({...x,medals:filter==='all'?x.medals:x.medals.filter(m=>filter==='manager'||filter==='league')})).filter(x=>x.medals.length);
+      out=filtered.map(x=>'<div class="medalManager"><div><b>'+esc(x.name)+'</b><small>'+esc(x.real)+'</small></div><div class="medalList">'+x.medals.map(m=>'<span title="Gameweek '+m.gameweek+' · '+m.points+' points">'+m.medal+' <small>GW'+m.gameweek+' · '+m.points+' pts</small></span>').join('')+'</div></div>').join('');
+      if(!out)out='<p>No medals to show yet.</p>';
+    }
+    box.innerHTML=out;
   }
   function apply(){
-    // Keep existing medal DOM in place during the 3-second UI refresh; removing/re-adding it caused flicker.
-    document.querySelectorAll('.managerCard').forEach((card,i)=>{
-      const t=community[i];if(!t)return;
-      setStableMedals(card.querySelector('.managerIdentityText'),t.user_id,false);
-    });
-    const rows=[...document.querySelectorAll('.leagueManagerRow')];
-    for(const row of rows){
-      const team=norm(row.querySelector('strong')?.textContent),t=community.find(x=>norm(x.team_name)===team);
-      if(!t)continue;
-      setStableMedals(row.querySelector('strong')?.parentElement||row,t.user_id,true);
-    }
-    const table=document.getElementById('ballerTable');
-    if(table&&winnersByGw.length){
-      let box=document.getElementById('gwMedalHistory');
-      if(!box){box=document.createElement('div');box.id='gwMedalHistory';table.parentElement?.insertBefore(box,table)}
-      const key=winnersByGw.map(g=>g.gameweek+':'+g.winners.map(w=>w.user_id+':'+w.place+':'+w.gwPoints).join(',')).join('|');
-      if(box.dataset.renderKey!==key){
-        box.innerHTML='<div class="gwMedalTitle"><b>🏅 Gameweek medals</b><small>Top 3 each completed gameweek</small></div>'+
-          winnersByGw.map(g=>'<div class="gwPodium"><b>GW'+g.gameweek+'</b>'+g.winners.map(w=>'<span>'+w.medal+' '+String(w.team_name||'Team')+' <small>'+w.gwPoints+' pts</small></span>').join('')+'</div>').join('');
-        box.dataset.renderKey=key;
-      }
+    // Medals live only in the dedicated Medals category now, so Manager and League tabs never get medal DOM updates.
+    const box=document.getElementById('medalsPanel');
+    if(box){
+      const active=document.querySelector('.medalFilter.active')?.dataset.medalFilter||'all';
+      const key=active+'|'+JSON.stringify(winnersByGw.map(g=>[g.gameweek,g.winners.map(w=>[w.user_id,w.place,w.gwPoints])]))+'|'+JSON.stringify([...history].map(([id,m])=>[id,m.map(x=>[x.gameweek,x.place,x.points])])); 
+      if(box.dataset.renderKey!==key){renderMedals(active);box.dataset.renderKey=key}
     }
   }
   const style=document.createElement('style');
   style.textContent='.fxMedals{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:5px}.fxMedals>span{display:inline-flex;align-items:center;gap:2px;font-size:16px}.fxMedals small{font-size:9px;color:#777}.fxLeagueMedals{display:inline-flex;margin:0 6px}.gwMedalTitle{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;padding:10px 12px;border-radius:12px;background:#fff8dc}.gwMedalTitle small{color:#777}.gwPodium{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid #eee}.gwPodium>b{min-width:44px}.gwPodium span{display:inline-flex;gap:5px;align-items:center}.gwPodium small{color:#777}';
   document.head.appendChild(style);
+  const style=document.createElement('style');
+  style.textContent='.medalFilters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.medalFilter{padding:9px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}.medalFilter.active{font-weight:700}.medalSectionTitle{font-size:18px;font-weight:700;margin-bottom:10px}.medalManager{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid #eee}.medalManager>div:first-child{display:flex;flex-direction:column;gap:3px}.medalManager small{color:#777}.medalList{display:flex;gap:10px;flex-wrap:wrap}.medalList span{display:inline-flex;align-items:center;gap:3px}.medalGw{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #eee}.medalGw>b{min-width:44px}.medalGw span{display:inline-flex;gap:4px;align-items:center}.medalGw small{color:#777}';
+  document.head.appendChild(style);
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('.medalFilter');if(!b)return;
+    document.querySelectorAll('.medalFilter').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    const box=document.getElementById('medalsPanel');if(box){box.dataset.renderKey='';renderMedals(b.dataset.medalFilter)}
+  });
   window.addEventListener('load',()=>{setTimeout(load,700);setInterval(apply,3000);setInterval(load,60000)});
 })();
