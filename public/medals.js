@@ -57,6 +57,14 @@
     }
     box.innerHTML=out;
   }
+  function removeLegacyMedals(){
+    document.querySelectorAll('#community .fxMedals,#community .fxLeagueMedals,#league .fxMedals,#league .fxLeagueMedals,.fxMedals,.fxLeagueMedals').forEach(el=>el.remove());
+  }
+  const legacyObserver=new MutationObserver(()=>removeLegacyMedals());
+  function startLegacyCleanup(){
+    removeLegacyMedals();
+    legacyObserver.observe(document.body,{childList:true,subtree:true});
+  }
   function apply(){
     // Medals live only in the dedicated Medals category now, so Manager and League tabs never get medal DOM updates.
     const box=document.getElementById('medalsPanel');
@@ -74,5 +82,5 @@
     document.querySelectorAll('.medalFilter').forEach(x=>x.classList.remove('active'));b.classList.add('active');
     const box=document.getElementById('medalsPanel');if(box){box.dataset.renderKey='';renderMedals(b.dataset.medalFilter)}
   });
-  window.addEventListener('load',()=>{setTimeout(load,700);setInterval(apply,3000);setInterval(load,60000)});
+  window.addEventListener('load',()=>{startLegacyCleanup();setTimeout(load,700);setInterval(apply,3000);setInterval(load,60000)});
 })();
