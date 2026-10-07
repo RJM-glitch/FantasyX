@@ -1,8 +1,8 @@
-// FantasyX v67: reliable squad removal/reset + protected manager points.
+// FantasyX v68: squad editing is always available; transfer-window locking no longer blocks team management.
 (function(){
   const $=id=>document.getElementById(id);let savedPoints=null;
   function state(){return window.getFantasyXTransferState?.()||{open:!!window.FX_TRANSFER_OPEN,targetGw:window.FX_TRANSFER_TARGET_GW||2,penalty:!!window.FX_TRANSFER_PENALTY}}
-  function ensureOpen(){const s=state();if(!s.open){alert('The transfer window is currently closed.');return false}try{TRANSFERS_LOCKED=false;TRANSFER_REASON=''}catch{}return true}
+  function ensureOpen(){return true}
   function commit(){try{localStorage.setItem('fx-squad-v7',JSON.stringify(S))}catch{}try{if(window.saveOnlineSquad)window.saveOnlineSquad(S)}catch{}try{if(typeof render==='function')render();else if(typeof pitch==='function')pitch()}catch{}setTimeout(decoratePoints,80)}
   window.removeById=id=>{if(!ensureOpen()||typeof S==='undefined')return;const n=Number(id);S=S.filter(x=>Number(x.id)!==n);commit()};
   window.removeP=i=>{if(!ensureOpen()||typeof S==='undefined')return;const n=Number(i);if(Number.isInteger(n)&&n>=0&&n<S.length)S.splice(n,1);commit()};
