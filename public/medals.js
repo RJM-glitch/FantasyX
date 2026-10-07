@@ -4,13 +4,15 @@
   const KEY='sb_publishable_x-etGDngNtgDlY4d4gJsXg_Frbplf0Y2';
   const MEDALS=['🥇','🥈','🥉'];
   const POS={GK:1,DEF:2,MID:3,FWD:4};
-  let history=new Map(),winnersByGw=[],community=[];
+  let history=new Map(),winnersByGw=[],community=[],loaded=false,loading=false;
   const norm=s=>String(s||'').trim().toLowerCase();
   function h32(...xs){let h=2166136261;for(const x of xs)for(const c of String(x)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
   function pointsForSnapshot(p,f){if(!f||f.status==='Upcoming')return 0;const min=f.status==='FT'?90:Number(f.minute||0),id=Number(p.player_id??p.id),pos=POS[String(p.position||p.pos||'').toUpperCase()]||3,seed=h32('FXPTS',id,f.id),club=String(p.club||'').toUpperCase();let pts=min>=1?1:0;if(min>=60)pts++;if(min>=25&&seed%11===0)pts+=pos===4?4:pos===3?5:6;if(min>=40&&seed%13===0)pts+=3;const home=String(f.home?.short||'').toUpperCase()===club,conceded=home?Number(f.awayScore||0):Number(f.homeScore||0);if(min>=60&&(pos===1||pos===2)&&conceded===0)pts+=4;if(min>=70&&seed%7===0)pts++;if(min>=85&&seed%17===0)pts+=2;return pts}
   function pickSnapshot(rows,gw){return rows.filter(x=>Number(x.gameweek)<=gw).sort((a,b)=>Number(b.gameweek)-Number(a.gameweek))[0]||null}
   function scoreSquad(squad,fixtureByClub){let total=0;for(const x of (Array.isArray(squad)?squad:[])){const f=fixtureByClub.get(String(x.club||'').toUpperCase());const base=pointsForSnapshot(x,f),bench=Boolean(x.is_bench??x.bench),cap=Boolean(x.is_captain??x.cap);total+=bench?0:base*(cap?2:1)}return total}
   async function load(){
+    if(loaded||loading)return;
+    loading=true;
     try{
       const [cr,sr]=await Promise.all([
         fetch('/api/community?t='+Date.now(),{cache:'no-store'}),
@@ -34,8 +36,9 @@
         const top=ranked.slice(0,3).map((x,i)=>({...x,place:i+1,medal:MEDALS[i],gameweek:gw}));
         if(top.length){winnersByGw.push({gameweek:gw,winners:top});for(const w of top){if(!history.has(w.user_id))history.set(w.user_id,[]);history.get(w.user_id).push({gameweek:gw,place:w.place,medal:w.medal,points:w.gwPoints})}}
       }
+      loaded=true;
       apply();
-    }catch(e){console.warn('FantasyX medals unavailable',e)}
+    }catch(e){console.warn('FantasyX medals unavailable',e)}finally{loading=false}
   }
   function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
   function renderMedals(filter='all'){
@@ -74,5 +77,8 @@
     document.querySelectorAll('.medalFilter').forEach(x=>x.classList.remove('active'));b.classList.add('active');
     const box=document.getElementById('medalsPanel');if(box){box.dataset.renderKey='';renderMedals(b.dataset.medalFilter)}
   });
-  window.addEventListener('load',()=>{setTimeout(load,700)});
+  window.addEventListener('load',()=>{
+    const tab=document.querySelector('.tab[data-view="medals"]');
+    if(tab)tab.addEventListener('click',()=>setTimeout(load,0));
+  });
 })();
