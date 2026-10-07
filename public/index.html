@@ -1,21 +1,62 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FantasyX — Closed</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FantasyX — Fantasy Football</title>
+<link rel="stylesheet" href="/style.css">
 <style>
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#070707;color:#fff;font-family:Arial,sans-serif;text-align:center;padding:24px}
-.card{max-width:560px;padding:42px 30px;border:1px solid #262626;border-radius:18px;background:#101010;box-shadow:0 20px 60px #0008}
-.logo{font-size:30px;font-weight:900;letter-spacing:2px}.logo span{color:#19e66b}
-h1{margin:24px 0 10px;font-size:34px}p{color:#aaa;line-height:1.6;margin:0}
-.badge{display:inline-block;margin-top:22px;padding:8px 14px;border-radius:999px;background:#1b1b1b;color:#888;font-size:12px;font-weight:700;letter-spacing:1px}
+body{background:#f4f4f4}.fxHeader{position:sticky;top:0;z-index:100;background:#050505;color:#fff;border-bottom:1px solid #222}.fxNav{width:min(1180px,94vw);margin:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 0;gap:14px}.fxLogo{font-weight:1000;letter-spacing:2px;font-size:21px}.fxLogo span{color:#aaa}.fxLinks{display:flex;gap:7px;flex-wrap:wrap}.fxLinks button,.fxLinks a{background:#151515;color:#fff;border:1px solid #333;border-radius:9px;padding:8px 11px;text-decoration:none;cursor:pointer;font-weight:800;font-size:12px}.fxMain{width:min(1180px,94vw);margin:24px auto 60px}.fxHero{background:#080808;color:#fff;border-radius:20px;padding:25px;margin-bottom:18px}.fxHero h1{margin:0;font-size:clamp(30px,5vw,48px)}.fxHero p{color:#aaa;margin:7px 0 0}.fxGrid{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}.fxCard{background:#fff;border:1px solid #ddd;border-radius:16px;padding:18px;margin-bottom:18px}.fxCard h2{margin:0 0 12px}.fxTabs{display:flex;gap:7px;overflow:auto;margin-bottom:15px}.fxTabs button{border:1px solid #ddd;background:#fff;border-radius:9px;padding:9px 12px;font-weight:800;white-space:nowrap;cursor:pointer}.fxTabs button.active{background:#111;color:#fff;border-color:#111}.view.hidden{display:none}.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.chip{border:1px solid #ddd;background:#fff;border-radius:10px;padding:11px 8px;font-weight:900;cursor:pointer}.chipActive{background:#111;color:#fff}.chipUsed{opacity:.45}.fxTableWrap{overflow:auto}.clubTable{width:100%;border-collapse:collapse}.clubTable th,.clubTable td{padding:10px;border-bottom:1px solid #eee;text-align:left}.clubTable th{font-size:11px;color:#777;text-transform:uppercase}.fxSideLink{display:block;width:100%;padding:12px;border-radius:10px;background:#111;color:#fff;text-decoration:none;text-align:center;font-weight:900;margin-top:9px}.fixture{width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:12px;margin:7px 0;border:1px solid #eee;background:#fff;border-radius:11px;text-align:center}.fixture time{font-size:10px;color:#777}.clubSide{display:flex;align-items:center;gap:7px}.clubSide img{width:30px;height:30px;object-fit:contain}.clubSide:last-child{justify-content:flex-end}.squadTitle{display:flex;justify-content:space-between;align-items:center;gap:10px}.statsBar{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}.stat{background:#f2f2f2;border-radius:10px;padding:8px 11px;font-size:12px}.stat b{font-size:15px}.botLink{background:#fff!important;color:#000!important}.profileBox{font-size:12px}.profileBox a{font-weight:900}.transferDeadlineText{font-size:12px;color:#777}.gameweekPicker{padding:8px;border:1px solid #ddd;border-radius:8px;font-weight:800}.fxSectionTitle{display:flex;justify-content:space-between;align-items:center;gap:10px}@media(max-width:850px){.fxGrid{grid-template-columns:1fr}.chips{grid-template-columns:repeat(2,1fr)}.fxNav{align-items:flex-start;flex-direction:column}.fxLinks{width:100%}}
 </style>
 </head>
-<body><main class="card">
-<div class="logo">FANTASY<span>X</span></div>
-<h1>FantasyX is closed</h1>
-<p>The FantasyX season has ended and the website is no longer being used.</p>
-<div class="badge">PROJECT CLOSED</div>
-</main></body>
-</html>
+<body>
+<header class="fxHeader"><nav class="fxNav">
+<div class="fxLogo">FANTASY<span>X</span></div>
+<div class="fxLinks"><button onclick="showView('team')">My Team</button><button onclick="showView('market')">Players</button><button onclick="showView('fixtures')">Fixtures</button><button onclick="showView('league')">League</button><a class="botLink" href="/bot-league.html">🤖 Bot League</a><a href="/login.html">Log in</a></div>
+</nav></header>
+<main class="fxMain">
+<section class="fxHero"><h1>Build your XI. Beat everyone. ⚽</h1><p>FantasyX 2026/27 — manage your squad, captain, chips, fixtures and league standings.</p></section>
+<div id="accountHub" class="profileBox fxCard"></div>
+<div class="fxTabs">
+<button class="tab active" data-view="team" onclick="showView('team')">My Team</button>
+<button class="tab" data-view="market" onclick="showView('market')">Transfers</button>
+<button class="tab" data-view="fixtures" onclick="showView('fixtures')">Fixtures</button>
+<button class="tab" data-view="league" onclick="showView('league')">League Table</button>
+<button class="tab" data-view="clubstats" onclick="showView('clubstats')">Club Stats</button>
+<button class="tab" data-view="playerstats" onclick="showView('playerstats')">Player Stats</button>
+<button class="tab" data-view="medals" onclick="showView('medals')">Medals</button>
+</div>
+<div id="team" class="view">
+<div class="fxGrid"><div>
+<section class="fxCard"><div class="squadTitle"><div><h2>Your Squad</h2><span class="transferDeadlineText"></span></div><a class="fxSideLink" style="width:auto;margin:0" href="/bot-league.html">Join Bot League →</a></div>
+<div class="statsBar"><div class="stat">Budget <b id="budget">£100.0m</b></div><div class="stat">Value <b id="value">£0.0m</b></div><div class="stat">Players <b id="count">0 / 15</b></div><div class="stat">Data <b id="dataStatus">Loading…</b></div></div>
+<div id="squad"></div></section>
+</div><aside>
+<section class="fxCard"><h2>Chips</h2><p id="chipStatus">No chip active for this gameweek.</p><div id="chips" class="chips"><button class="chip" data-chip="Wildcard">Wildcard</button><button class="chip" data-chip="Free Hit">Free Hit</button><button class="chip" data-chip="Bench Boost">Bench Boost</button><button class="chip" data-chip="Triple Captain">Triple Captain</button></div></section>
+<section class="fxCard"><h2>Gameweek</h2><select id="gameweekSelect" class="gameweekPicker"></select><p class="hint">Choose a gameweek to view its fixtures and results.</p></section></aside></div>
+</div>
+<div id="market" class="view hidden"><section class="fxCard"><h2>Player Market</h2><div class="fxGrid"><input id="search" placeholder="Search player…"><select id="filter"><option value="">All positions</option><option>GK</option><option>DEF</option><option>MID</option><option>FWD</option></select></div><select id="club"><option value="">All clubs</option></select><button id="clear">Clear squad</button><div id="players"></div></section></div>
+<div id="fixtures" class="view hidden"><section class="fxCard"><div class="fxSectionTitle"><h2>Fixtures</h2><select id="fixtureGw" class="gameweekPicker" onchange="loadFootball(Number(this.value)||1)"></select></div><div id="fixtureList"><p class="hint">Loading fixtures…</p></div></section></div>
+<div id="league" class="view hidden"><section class="fxCard"><h2>FantasyX League Table</h2><div id="ballerTable"><p class="hint">Loading league…</p></div></section></div>
+<div id="clubstats" class="view hidden"><section class="fxCard"><h2>Club Stats</h2><div id="realClubStats"><p class="hint">Loading…</p></div></section></div>
+<div id="playerstats" class="view hidden"><section class="fxCard"><h2>Player Stats</h2><div id="playerStats"><p class="hint">Loading…</p></div></section></div>
+<div id="medals" class="view hidden"><section class="fxCard"><div class="medalFilters"><button class="medalFilter active" data-medal-filter="all">All</button><button class="medalFilter" data-medal-filter="gameweek">Gameweeks</button></div><div id="medalsPanel"><p class="hint">Loading medals…</p></div></section></div>
+</main>
+<div id="playerModal" class="hidden"><div id="playerModalContent"></div></div>
+<script>
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('hidden',v.id!==id));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(id==='league')window.loadManagerTable?.();if(id==='fixtures')window.loadFootball?.(Number(document.getElementById('fixtureGw')?.value||1));}
+</script>
+<script src="/app.js"></script>
+<script src="/extras.js"></script>
+<script src="/account.js"></script>
+<script src="/features-v64.js"></script>
+<script src="/team-status-v65.js"></script>
+<script src="/team-tools-v66.js"></script>
+<script src="/team-fixes-v67.js"></script>
+<script src="/match-subs-v68.js"></script>
+<script src="/stats-tabs-v68.js"></script>
+<script src="/transfers-open.js"></script>
+<script src="/medals.js"></script>
+<script>
+window.addEventListener('load',()=>{const sel=document.getElementById('fixtureGw'),src=document.getElementById('gameweekSelect');if(sel&&src){sel.innerHTML=src.innerHTML;sel.value=src.value||'1';src.addEventListener('change',()=>{sel.value=src.value})}});
+</script>
+</body></html>
