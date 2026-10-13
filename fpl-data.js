@@ -7,7 +7,7 @@ async function cached(key,url,ttl=300000){
   const now=Date.now(),old=MEM.get(key);
   if(old?.data&&now-old.at<ttl)return old.data;
   if(old?.promise)return old.promise;
-  if(old?.data&&old.retryAt&&now<old.retryAt)return old.data;
+  if(old?.retryAt&&now<old.retryAt){if(old.data!==undefined)return old.data;throw old.error||Error('Premier League feed temporarily unavailable.');}
 
   const previous=old?.data,previousAt=old?.at||0;
   const promise=(async()=>{
@@ -23,10 +23,8 @@ async function cached(key,url,ttl=300000){
       MEM.set(key,{data,at:Date.now(),retryAt:0});
       return data;
     }catch(error){
-      if(previous!==undefined){
-        MEM.set(key,{data:previous,at:previousAt,retryAt:Date.now()+30000});
-        return previous;
-      }
+      MEM.set(key,{data:previous,at:previousAt,retryAt:Date.now()+30000,error});
+      if(previous!==undefined)return previous;
       throw error;
     }finally{
       clearTimeout(timeout);
