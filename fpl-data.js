@@ -1,28 +1,113 @@
-const BOOT='https://fantasy.premierleague.com/api/bootstrap-static/';const MEM=new Map();
-async function cached(key,url,ttl){const now=Date.now(),old=MEM.get(key);if(old?.data&&now-old.at<ttl)return old.data;if(old?.promise)return old.promise;const p=(async()=>{const r=await fetch(url,{headers:{Accept:'application/json'}});if(!r.ok)throw Error('feed unavailable');const data=await r.json();MEM.set(key,{data,at:Date.now()});return data})();MEM.set(key,{data:old?.data,at:old?.at||0,promise:p});try{return await p}finally{const cur=MEM.get(key);if(cur?.promise)MEM.set(key,{data:cur.data,at:cur.at})}}
-export const getBoot=()=>cached('boot',BOOT,300000);export function teams(d){return new Map(d.teams.map(t=>[t.id,{id:t.id,name:t.name,short:t.short_name,code:t.code,badge:`https://resources.premierleague.com/premierleague/badges/70/t${t.code}.png`}]))}
-const GW1_SLOT={label:'1:56 PM – 2:15 PM',start:'13:56',end:'14:15'};
-const MATCH_SLOTS=[
- {label:'8:30 AM – 9:20 AM',start:'08:30',end:'09:20'},
- {label:'9:45 AM – 10:35 AM',start:'09:45',end:'10:35'},
- {label:'11:00 AM – 11:50 AM',start:'11:00',end:'11:50'},
- {label:'12:15 PM – 1:05 PM',start:'12:15',end:'13:05'},
- {label:'1:40 PM – 2:30 PM',start:'13:40',end:'14:30'}
-];
-const GW2_RESET_SLOTS=[
- {label:'2:20 PM – 3:15 PM',start:'14:20',end:'15:15'}
-];
-function ymd(d){return d.toISOString().slice(0,10)}function addDays(date,n){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return ymd(d)}
-function gameweekDate(gw){return Number(gw)===1?'2026-09-17':addDays('2026-09-18',Math.max(0,Number(gw)-2))}
-function scheduleFor(gw,count){const date=gameweekDate(gw);if(Number(gw)===1)return Array.from({length:count},()=>({date,...GW1_SLOT}));if(Number(gw)===2)return Array.from({length:count},()=>({date,...GW2_RESET_SLOTS[0]}));return Array.from({length:count},(_,i)=>({date,...MATCH_SLOTS[Math.min(MATCH_SLOTS.length-1,Math.floor(i/2))]}))}
-function displayDate(date){return new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Johannesburg',weekday:'short',day:'2-digit',month:'short'}).format(new Date(date+'T12:00:00+02:00'))}
-function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}function hashSeed(...xs){let h=2166136261;for(const x of xs)for(const c of String(x)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-function versionFor(gw){return Number(gw)===1?'FantasyX-R2':Number(gw)===2?'FantasyX-R4-RESET':'FantasyX-R3'}
-function randomFixtures(teamList,gw){const version=versionFor(gw),rng=mulberry32(hashSeed(version,gw,'fixtures')),arr=[...teamList];for(let i=arr.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}const out=[],prefix=Number(gw)===1?'FXR2':'FXR3';for(let i=0;i<arr.length;i+=2){let home=arr[i],away=arr[i+1];if(rng()<.5)[home,away]=[away,home];out.push({id:`${prefix}-${gw}-${i/2+1}`,team_h:home.id,team_a:away.id})}return out}
-function scoreFor(f,gw){const rng=mulberry32(hashSeed(versionFor(gw),gw,f.team_h,f.team_a,'score')),goals=()=>{const r=rng();return r<.24?0:r<.55?1:r<.79?2:r<.93?3:r<.985?4:5};return[goals(),goals()]}
-function liveStatus(date,start,end){const a=Date.parse(`${date}T${start}:00+02:00`),b=Date.parse(`${date}T${end}:00+02:00`),n=Date.now();if(n<a)return{status:'Upcoming',minute:0};if(n>=b)return{status:'FT',minute:90};return{status:'LIVE',minute:Math.max(1,Math.min(90,Math.floor(((n-a)/(b-a))*90)))}}
-function statsFor(f,gw,frac){const r=mulberry32(hashSeed(versionFor(gw),gw,f.team_h,f.team_a,'stats')),full={shots:[7+Math.floor(r()*10),7+Math.floor(r()*10)],shotsOnTarget:[2+Math.floor(r()*6),2+Math.floor(r()*6)],possession:[0,0],fouls:[7+Math.floor(r()*9),7+Math.floor(r()*9)],yellowCards:[Math.floor(r()*4),Math.floor(r()*4)],redCards:[r()<.08?1:0,r()<.08?1:0],offsides:[Math.floor(r()*5),Math.floor(r()*5)],corners:[2+Math.floor(r()*8),2+Math.floor(r()*8)]};full.possession[0]=38+Math.floor(r()*25);full.possession[1]=100-full.possession[0];if(frac<=0)return Object.fromEntries(Object.keys(full).map(k=>[k,[0,0]]));const scale=(a,k)=>k==='possession'?a:a.map(v=>Math.max(0,Math.round(v*frac)));return Object.fromEntries(Object.entries(full).map(([k,v])=>[k,scale(v,k)]))}
-async function generatedWeek(gw){const d=await getBoot(),tm=teams(d),matches=randomFixtures([...tm.values()],Number(gw)),schedule=scheduleFor(gw,matches.length);return{tm,matches,schedule}}
-export async function gameweek(gw=1){const{tm,matches,schedule}=await generatedWeek(gw);return matches.map((f,i)=>{const s=schedule[i],ls=liveStatus(s.date,s.start,s.end),final=scoreFor(f,gw),frac=ls.status==='LIVE'?ls.minute/90:ls.status==='FT'?1:0;return{id:f.id,gameweek:Number(gw),home:tm.get(f.team_h),away:tm.get(f.team_a),date:displayDate(s.date),dateISO:s.date,time:s.label,slotStart:s.start,slotEnd:s.end,kickoff:`${s.date}T${s.start}:00+02:00`,status:ls.status,minute:ls.minute,homeScore:Math.floor(final[0]*frac),awayScore:Math.floor(final[1]*frac),finalHomeScore:final[0],finalAwayScore:final[1],stats:statsFor(f,gw,frac),events:[],playerPoints:[]}})}
-export async function standings(){const d=await getBoot(),tm=teams(d),rows=new Map();for(const t of tm.values())rows.set(t.id,{team:t.name,short:t.short,logo:t.badge,played:0,wins:0,draws:0,losses:0,gf:0,ga:0,points:0});for(let gw=1;gw<=38;gw++){const{matches,schedule}=await generatedWeek(gw);for(let i=0;i<matches.length;i++){const f=matches[i],ls=liveStatus(schedule[i].date,schedule[i].start,schedule[i].end);if(ls.status!=='FT')continue;const h=rows.get(f.team_h),a=rows.get(f.team_a),[hs,as]=scoreFor(f,gw);h.played++;a.played++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;if(hs>as){h.wins++;a.losses++;h.points+=3}else if(hs<as){a.wins++;h.losses++;a.points+=3}else{h.draws++;a.draws++;h.points++;a.points++}}}return[...rows.values()].map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.points-a.points||b.gd-a.gd||b.gf-a.gf).map((x,i)=>({...x,rank:i+1}))}
-export function warm(){getBoot().catch(()=>{})}
+const BOOT='https://fantasy.premierleague.com/api/bootstrap-static/';
+const FIXTURES_URL='https://fantasy.premierleague.com/api/fixtures/';
+const MEM=new Map();
+
+async function cached(key,url,ttl=300000){
+  const now=Date.now(),old=MEM.get(key);
+  if(old?.data&&now-old.at<ttl)return old.data;
+  if(old?.promise)return old.promise;
+  const promise=(async()=>{
+    const response=await fetch(url,{headers:{Accept:'application/json'}});
+    if(!response.ok)throw Error('Premier League feed unavailable ('+response.status+').');
+    const data=await response.json();
+    MEM.set(key,{data,at:Date.now()});
+    return data;
+  })();
+  MEM.set(key,{data:old?.data,at:old?.at||0,promise});
+  try{return await promise}finally{
+    const current=MEM.get(key);
+    if(current?.promise)MEM.set(key,{data:current.data,at:current.at});
+  }
+}
+
+export const getBoot=()=>cached('boot',BOOT,300000);
+const getFixtures=()=>cached('fixtures',FIXTURES_URL,60000);
+
+export function teams(data){
+  return new Map((data.teams||[]).map(team=>[team.id,{
+    id:team.id,name:team.name,short:team.short_name,code:team.code,
+    badge:`https://resources.premierleague.com/premierleague/badges/70/t${team.code}.png`
+  }]));
+}
+
+function formatKickoff(value){
+  if(!value)return{date:'TBD',time:'Kick-off to be confirmed',dateISO:null,slotStart:null,slotEnd:null};
+  const date=new Date(value);
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Johannesburg',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+  const day=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Johannesburg',weekday:'short',day:'2-digit',month:'short'}).format(date);
+  const time=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Johannesburg',hour:'2-digit',minute:'2-digit',hour12:false}).format(date);
+  return{date:day,time,dateISO:parts,slotStart:time,slotEnd:time};
+}
+
+function matchStatus(f){
+  if(f.finished)return{status:'FT',minute:90};
+  if(f.started){
+    const elapsed=f.kickoff_time?Math.floor((Date.now()-Date.parse(f.kickoff_time))/60000):0;
+    return{status:'LIVE',minute:Math.max(1,Math.min(90,Number(f.minutes)||elapsed))};
+  }
+  return{status:'Upcoming',minute:0};
+}
+
+function actualStats(f){
+  const stats={shots:[0,0],shotsOnTarget:[0,0],possession:[0,0],fouls:[0,0],yellowCards:[0,0],redCards:[0,0],offsides:[0,0],corners:[0,0]};
+  for(const group of f.stats||[]){
+    const key=({yellow_cards:'yellowCards',red_cards:'redCards'})[group.identifier];
+    if(!key)continue;
+    for(const entry of group.h||[])stats[key][0]+=Number(entry.value)||0;
+    for(const entry of group.a||[])stats[key][1]+=Number(entry.value)||0;
+  }
+  return stats;
+}
+
+function mapFixture(f,teamMap){
+  const kickoff=formatKickoff(f.kickoff_time);
+  const live=matchStatus(f);
+  const home=teamMap.get(Number(f.team_h));
+  const away=teamMap.get(Number(f.team_a));
+  if(!home||!away)return null;
+  const homeScore=f.team_h_score===null?null:Number(f.team_h_score);
+  const awayScore=f.team_a_score===null?null:Number(f.team_a_score);
+  return{
+    id:f.id,gameweek:Number(f.event)||null,home,away,...kickoff,
+    kickoff:f.kickoff_time||null,status:live.status,minute:live.minute,
+    homeScore,awayScore,finalHomeScore:f.finished?homeScore:null,finalAwayScore:f.finished?awayScore:null,
+    stats:actualStats(f),events:[],playerPoints:[],started:Boolean(f.started),finished:Boolean(f.finished)
+  };
+}
+
+export async function gameweek(gw=1){
+  const [boot,allFixtures]=await Promise.all([getBoot(),getFixtures()]);
+  const teamMap=teams(boot);
+  return allFixtures
+    .filter(f=>Number(f.event)===Number(gw))
+    .map(f=>mapFixture(f,teamMap))
+    .filter(Boolean)
+    .sort((a,b)=>String(a.kickoff||'').localeCompare(String(b.kickoff||''))||Number(a.id)-Number(b.id));
+}
+
+export async function standings(){
+  const [boot,fixtures]=await Promise.all([getBoot(),getFixtures()]);
+  const teamMap=teams(boot),rows=new Map();
+  for(const team of teamMap.values())rows.set(team.id,{
+    team:team.name,short:team.short,logo:team.badge,played:0,wins:0,draws:0,losses:0,gf:0,ga:0,points:0
+  });
+  for(const fixture of fixtures){
+    if(!fixture.finished||fixture.team_h_score===null||fixture.team_a_score===null)continue;
+    const home=rows.get(Number(fixture.team_h)),away=rows.get(Number(fixture.team_a));
+    if(!home||!away)continue;
+    const hs=Number(fixture.team_h_score),as=Number(fixture.team_a_score);
+    home.played++;away.played++;home.gf+=hs;home.ga+=as;away.gf+=as;away.ga+=hs;
+    if(hs>as){home.wins++;away.losses++;home.points+=3}
+    else if(hs<as){away.wins++;home.losses++;away.points+=3}
+    else{home.draws++;away.draws++;home.points++;away.points++}
+  }
+  return [...rows.values()]
+    .map(team=>({...team,gd:team.gf-team.ga}))
+    .sort((a,b)=>b.points-a.points||b.gd-a.gd||b.gf-a.gf||a.team.localeCompare(b.team))
+    .map((team,index)=>({...team,rank:index+1}));
+}
+
+export function warm(){
+  getBoot().catch(()=>{});
+  getFixtures().catch(()=>{});
+}
