@@ -119,12 +119,6 @@ const formations = {
 
 window.saveOnlineSquad = async squad => {
   if (!currentUser || !Array.isArray(squad)) return { ok: false, localOnly: true };
-  if (squad.length !== 15) {
-    window.FX_SAVE_STATE = { ok: false, error: 'A squad must contain 15 players.' };
-    fxNotify('Squad NOT saved: a squad must contain 15 players.', true);
-    return window.FX_SAVE_STATE;
-  }
-
   const formation = localStorage.getItem('fx-formation') || '3-4-3';
   const [defenders, midfielders, forwards] = formations[formation] || formations['3-4-3'];
   const starters = [
@@ -133,7 +127,7 @@ window.saveOnlineSquad = async squad => {
     ...squad.filter(p => p.pos === 'MID').slice(0, midfielders),
     ...squad.filter(p => p.pos === 'FWD').slice(0, forwards)
   ];
-  if (starters.length !== 11) {
+  if (squad.length === 15 && starters.length !== 11) {
     window.FX_SAVE_STATE = { ok: false, error: 'Your squad does not match the selected formation.' };
     fxNotify('Squad NOT saved: check your formation and player positions.', true);
     return window.FX_SAVE_STATE;
