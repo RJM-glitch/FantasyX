@@ -15,3 +15,5 @@ These local assets are used for the FantasyUefa fan-made interface. They are not
 - `legends/cristiano-ronaldo.jpg` — Cristiano Ronaldo photo by Ilya Khokhlov, Wikimedia Commons, CC BY-SA 3.0: https://commons.wikimedia.org/wiki/File:Cristiano_Ronaldo_20120609.jpg
 
 Brand ownership and image licenses remain with the respective rights holders. Attribution is retained here for the public photos. The site footer identifies FantasyUefa as an unofficial fan-made concept.
+
+The deploy-facing SVG copies are also available at `public/img/competitions/` under the same three filenames; LaLiga and Champions League preserve the official downloaded artwork inside SVG containers for the required SVG paths.
