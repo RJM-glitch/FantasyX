@@ -53,7 +53,7 @@ function fxNotify(msg, bad = false) {
   t._hideTimer = setTimeout(() => { t.style.display = 'none'; }, bad ? 6000 : 1800);
 }
 
-// Keep this helper isolated so it can be tested without a browser.
+//#restore-start
 function restoreLineup(rows) {
   const arr = (Array.isArray(rows) ? rows : []).map(x => ({
     id: Number(x.player_id ?? x.id),
@@ -90,6 +90,8 @@ function restoreLineup(rows) {
     .concat(bench);
   return { arr: ordered.map(({ _b, ...p }) => p), formation };
 }
+
+//#restore-end
 
 async function loadCloudSquad() {
   if (!currentUser) return;
