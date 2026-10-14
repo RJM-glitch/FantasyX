@@ -43,8 +43,10 @@ window.addEventListener('load',()=>{
    window.FX_LATEST_COMPLETED_GAMEWEEK=Number(meta.latestCompletedGameweek)||0;
    const gameweekSelect=document.getElementById('gameweekSelect');
    const fixtureGw=document.getElementById('fixtureGw');
+   const totwSelect=document.getElementById('totwGameweekSelect');
    if(gameweekSelect)gameweekSelect.value=String(window.FX_CURRENT_GAMEWEEK);
    if(fixtureGw)fixtureGw.value=String(window.FX_CURRENT_GAMEWEEK);
+   if(totwSelect)totwSelect.value=String(window.FX_LATEST_COMPLETED_GAMEWEEK||window.FX_CURRENT_GAMEWEEK);
    loadFootball(window.FX_CURRENT_GAMEWEEK);
  }).catch(()=>{});
 
