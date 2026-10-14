@@ -27,4 +27,5 @@ assert.equal(live.elements[0].stats.goals_scored, 1);
 assert.equal(live.elements[0].stats.yellow_cards, 1);
 assert.equal(live.elements[1].stats.minutes, 0);
 assert.throws(() => normalizeEventLive({}, 7), /invalid payload/);
+assert.throws(() => normalizeEventLive({ elements: [] }, 7), /invalid payload/);
 console.log('PASS official FPL data helpers');
