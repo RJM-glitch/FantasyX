@@ -1,7 +1,7 @@
 const FX_API='/api';
 let fixtureData=[],FOOTBALL_INFLIGHT=new Map(),STATS_CACHE={at:0,data:null,promise:null};
 function currentGameweek(){return Math.max(1,Math.min(38,Number(window.FX_CURRENT_GAMEWEEK)||1))}
-function latestCompletedGameweek(){return Math.max(0,Math.min(38,Number(window.FX_LATEST_COMPLETED_GAMEWEEK)||0)}
+function latestCompletedGameweek(){return Math.max(0,Math.min(38,Number(window.FX_LATEST_COMPLETED_GAMEWEEK)||0))}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function movedOut(p){const status=String(p?.availabilityStatus||'').toLowerCase(),news=String(p?.injuryNews||'').toLowerCase();return status==='u'||/\b(transferred to|left the club|joined .* permanently|loaned to)\b/.test(news)}
 function activePlayerIds(){try{return new Set((typeof P!=='undefined'?P:[]).filter(p=>!movedOut(p)).map(p=>Number(p.id)))}catch{return new Set()}}
