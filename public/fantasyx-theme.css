@@ -1,7 +1,9 @@
 /* FantasyX stadium theme — custom fan artwork, not an official league design. */
 :root{color-scheme:dark;--fx-purple:#6d32c8;--fx-purple-bright:#a56bff;--fx-green:#38f5ad;--fx-glass:rgba(8,13,31,.84);--fx-line:rgba(188,165,255,.25)}
 html{background:#070b18}
-body{background:#070b18 url('/fantasyx-stadium.svg') center top/cover fixed no-repeat!important;color:#f7f5ff!important;min-height:100vh}
+body{background-color:#070b18!important;background-image:linear-gradient(180deg,rgba(4,6,20,.54),rgba(4,7,20,.79) 45%,rgba(4,12,19,.91)),var(--fx-daily-bg,url('/fantasyx-stadium.svg'))!important;background-position:center top!important;background-size:cover!important;background-attachment:fixed!important;background-repeat:no-repeat!important;color:#f7f5ff!important;min-height:100vh}
+html.fx-background-ready body{background-image:linear-gradient(180deg,rgba(4,6,20,.54),rgba(4,7,20,.79) 45%,rgba(4,12,19,.91)),var(--fx-daily-bg)!important}
+#fxBackgroundCredit{display:block;margin:0 auto 18px;text-align:center;color:#c0b6dc;font-size:10px;opacity:.85}
 body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(6,8,24,.28),rgba(5,9,22,.72) 48%,rgba(4,12,19,.88))}
 .fxHeader{background:rgba(7,8,22,.92)!important;border-bottom:1px solid rgba(169,119,255,.45)!important;box-shadow:0 10px 35px #0007;backdrop-filter:blur(14px)}
 .fxLogo{display:flex;align-items:center;gap:9px;letter-spacing:2px;color:#fff}
