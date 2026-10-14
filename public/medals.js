@@ -59,26 +59,26 @@
     if(loaded||loading)return;
     loading=true;
     try{
-      const [cr,sr]=await Promise.all([
+      const [cr,sr,tr]=await Promise.all([
         fetch('/api/community?t='+Date.now(),{cache:'no-store'}),
-        fetch(SUPA+'/rest/v1/rpc/fx_public_gameweek_squads',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
+        fetch(SUPA+'/rest/v1/rpc/fx_public_gameweek_squads',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
+        fetch(SUPA+'/rest/v1/rpc/fx_public_transfer_penalties',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
       ]);
-      if(!cr.ok||!sr.ok)throw Error('Medal data request failed');
-      community=(await cr.json()).teams||[];
-      const snaps=await sr.json(),byUser=new Map();
+      if(!cr.ok||!sr.ok||!tr.ok)throw Error('Medal data request failed');
+      const [communityData,snaps,penalties]=await Promise.all([cr.json(),sr.json(),tr.json()]);
+      community=communityData.teams||[];
+      const penaltyByUserGw=new Map();
+      for(const p of penalties||[]){const key=String(p.user_id)+':'+Number(p.gameweek);penaltyByUserGw.set(key,(penaltyByUserGw.get(key)||0)+Number(p.penalty_points||0))}
+      const byUser=new Map();
       for(const s of (snaps||[])){if(!byUser.has(s.user_id))byUser.set(s.user_id,[]);byUser.get(s.user_id).push(s)}
       history=new Map();winnersByGw=[];
       for(let gw=1;gw<=38;gw++){
         const pr=await fetch('/api/gameweek-player-points?gw='+gw+'&t='+Date.now(),{cache:'no-store'});if(!pr.ok)break;
         const pointsData=await pr.json();if(!pointsData.complete)break;
         const playerMap=new Map((pointsData.players||[]).map(p=>[Number(p.id),{points:Number(p.points)||0,minutes:Number(p.minutes)||0,pos:p.pos}]));
-        const rows=community.map(t=>{const snap=pickSnapshot(byUser.get(t.user_id)||[],gw);return{...t,gwPoints:snap?scoreSquad(snap.squad,playerMap):0}}).filter(x=>norm(x.team_name)!=='my xi'||String(x.real_name||'').trim());
+        const rows=community.map(t=>{const snap=pickSnapshot(byUser.get(t.user_id)||[],gw),gross=snap?scoreSquad(snap.squad,playerMap):0,penalty=penaltyByUserGw.get(String(t.user_id)+':'+gw)||0;return{...t,gwPoints:gross-penalty}}).filter(x=>norm(x.team_name)!=='my xi'||String(x.real_name||'').trim());
         rows.sort((a,b)=>b.gwPoints-a.gwPoints||String(a.team_name||'').localeCompare(String(b.team_name||'')));
         let ranked=rows.filter(x=>x.gwPoints>0);
-        if(gw===1){
-          const goat=ranked.find(x=>norm(x.real_name)==='goatwaan'||norm(x.team_name)==='gombino fc');
-          if(goat){const rest=ranked.filter(x=>x.user_id!==goat.user_id);ranked=[...rest.slice(0,2),goat,...rest.slice(2)]}
-        }
         const top=ranked.slice(0,3).map((x,i)=>({...x,place:i+1,medal:MEDALS[i],gameweek:gw}));
         if(top.length){winnersByGw.push({gameweek:gw,winners:top});for(const w of top){if(!history.has(w.user_id))history.set(w.user_id,[]);history.get(w.user_id).push({gameweek:gw,place:w.place,medal:w.medal,points:w.gwPoints})}}
       }
