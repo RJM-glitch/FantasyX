@@ -41,7 +41,7 @@ async function ensureUser(){
   const data=await r.json(),names=new Map(players.map(p=>[Number(p.id),p]));
   userSquad=(data.squad||[]).map(row=>{
    const id=Number(row.player_id??row.id),p=names.get(id);
-   return p?{...p,player_id:id,is_captain:Boolean(row.is_captain??row.cap),is_vice:Boolean(row.is_vice??row.vice),is_bench:Boolean(row.is_bench??row.bench)}:null;
+   return p?{...p,player_id:id,is_captain:Boolean(row.is_captain??row.cap),is_vice:Boolean(row.is_vice??row.vice),is_bench:(row.is_bench??row.bench)}:null;
   }).filter(Boolean);
  }catch{userSquad=[]}
  $("#userName").textContent=userSquad.length?"Your FantasyX team":"No saved squad yet";
