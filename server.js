@@ -281,7 +281,7 @@ app.get('/api/players', async (req, res) => {
     const types = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' };
     const players = (boot.elements || []).filter(p => tm.has(p.team)).map(p => {
       const team = tm.get(p.team);
-      const photoId = String(p.photo || '').replace(/\\.jpg$/i, '');
+      const photoId = String(p.photo || '').replace(/\.jpg$/i, '');
       const stats = eventStats.get(Number(p.id)) || null;
       const rawChance = p.chance_of_playing_next_round;
       const chance = rawChance === null || rawChance === undefined ? (p.status === 'a' ? 100 : 0) : Number(rawChance);
