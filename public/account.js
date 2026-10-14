@@ -1,3 +1,6 @@
+(async function initFantasyXAccount() {
+'use strict';
+
 const hub = document.getElementById('accountHub');
 
 function esc(s) {
@@ -208,3 +211,6 @@ await drawHub();
 await setupLeagueCard();
 if (window.setOnlineSquad) await loadCloudSquad();
 else window.addEventListener('fantasyx-ready', loadCloudSquad, { once: true });
+
+
+})();
