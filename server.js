@@ -72,6 +72,7 @@ async function enrichFixtures(fixtures) {
 async function fantasySeasonStats() {
   const boot = await getBoot();
   const teamInfo = new Map((boot.teams || []).map(t => [Number(t.id), t]));
+  const badgeInfo = teams(boot);
   const playerById = new Map((boot.elements || []).map(p => [Number(p.id), p]));
   const playerRows = new Map();
   for (const p of boot.elements || []) {
@@ -82,14 +83,14 @@ async function fantasySeasonStats() {
       name: p.web_name,
       club: team?.name || '',
       clubShort: team?.short_name || '',
-      clubBadge: team?.code ? 'https://resources.premierleague.com/premierleague/badges/70/t' + team.code + '.png' : '',
+      clubBadge: badgeInfo.get(Number(p.team))?.badge || '',
       photo: photoId ? 'https://resources.premierleague.com/premierleague/photos/players/250x250/p' + photoId + '.png' : '/player.svg',
       goals: 0, assists: 0, yellowCards: 0, redCards: 0, minutes: 0, points: 0
     });
   }
   const clubRows = new Map((boot.teams || []).map(t => [Number(t.id), {
     team: t.name, short: t.short_name,
-    badge: t.code ? 'https://resources.premierleague.com/premierleague/badges/70/t' + t.code + '.png' : '',
+    badge: badgeInfo.get(Number(t.id))?.badge || '', badgeFallback: badgeInfo.get(Number(t.id))?.badgeFallback || '',
     played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, yellowCards: 0, redCards: 0
   }]));
 
