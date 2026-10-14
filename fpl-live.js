@@ -24,7 +24,7 @@ export function gameweekMeta(boot, now = Date.now()) {
 }
 
 export function normalizeEventLive(payload, gameweek) {
-  if (!payload || !Array.isArray(payload.elements)) {
+  if (!payload || !Array.isArray(payload.elements) || payload.elements.length === 0) {
     throw new Error('Official FPL live feed returned an invalid payload for Gameweek ' + gameweek + '.');
   }
   return {
