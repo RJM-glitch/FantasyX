@@ -1,0 +1,52 @@
+/* FantasyX stadium theme — custom fan artwork, not an official league design. */
+:root{color-scheme:dark;--fx-purple:#6d32c8;--fx-purple-bright:#a56bff;--fx-green:#38f5ad;--fx-glass:rgba(8,13,31,.84);--fx-line:rgba(188,165,255,.25)}
+html{background:#070b18}
+body{background-color:#070b18!important;background-image:linear-gradient(180deg,rgba(4,6,20,.54),rgba(4,7,20,.79) 45%,rgba(4,12,19,.91)),var(--fx-daily-bg,url('/fantasyx-stadium.svg'))!important;background-position:center top!important;background-size:cover!important;background-attachment:fixed!important;background-repeat:no-repeat!important;color:#f7f5ff!important;min-height:100vh}
+html.fx-background-ready body{background-image:linear-gradient(180deg,rgba(4,6,20,.54),rgba(4,7,20,.79) 45%,rgba(4,12,19,.91)),var(--fx-daily-bg)!important}
+#fxBackgroundCredit{display:block;margin:0 auto 18px;text-align:center;color:#c0b6dc;font-size:10px;opacity:.85}
+body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(6,8,24,.28),rgba(5,9,22,.72) 48%,rgba(4,12,19,.88))}
+.fxHeader{background:rgba(7,8,22,.92)!important;border-bottom:1px solid rgba(169,119,255,.45)!important;box-shadow:0 10px 35px #0007;backdrop-filter:blur(14px)}
+.fxLogo{display:flex;align-items:center;gap:9px;letter-spacing:2px;color:#fff}
+.fxLogoMark{width:30px;height:30px;display:inline-grid;place-items:center;border:1px solid #a56bff;border-radius:9px;background:linear-gradient(145deg,#6d32c8,#17132f);box-shadow:0 0 18px #8d42ff66}
+.fxLogoMark svg{width:22px;height:22px}
+.fxLogo span{color:var(--fx-green)!important}
+.fxMain{position:relative}
+.fxHero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:205px;padding:clamp(22px,4vw,38px)!important;background:linear-gradient(110deg,rgba(15,8,39,.94),rgba(30,14,66,.79) 55%,rgba(5,34,45,.76))!important;border:1px solid rgba(181,139,255,.55);box-shadow:0 18px 50px #0007,inset 0 1px #ffffff18}
+.fxHero:after{content:"";position:absolute;width:280px;height:280px;right:12%;top:-130px;border:1px solid #b38bff44;border-radius:50%;box-shadow:0 0 0 26px #b38bff0b,0 0 0 58px #b38bff0a;pointer-events:none}
+.fxHero h1{position:relative;z-index:1;color:#fff;text-shadow:0 4px 28px #0009;max-width:700px}
+.fxHero p{position:relative;z-index:1;color:#d2c7f0!important;line-height:1.6}
+.fxLeagueBadge{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:150px;padding:15px 18px;border:1px solid #b99aff70;border-radius:17px;background:linear-gradient(145deg,#ffffff12,#00000020);box-shadow:0 8px 30px #0004;text-align:center}
+.fxLeagueBadge svg{width:54px;height:54px;filter:drop-shadow(0 0 12px #9a64ff66)}
+.fxLeagueBadge strong{font-size:11px;letter-spacing:1.7px;color:#fff}
+.fxLeagueBadge small{font-size:9px;letter-spacing:1px;color:#c7b9ee}
+.fxCard{background:var(--fx-glass)!important;color:#f7f5ff!important;border:1px solid var(--fx-line)!important;border-radius:17px!important;box-shadow:0 14px 40px #0005;backdrop-filter:blur(12px)}
+.fxCard h2,.fxCard h3,.fxCard label{color:#fff}
+.fxCard p,.fxCard .hint,.transferDeadlineText{color:#c6c0d9}
+.fxTabs{border-bottom-color:#ffffff2c!important}
+.fxTabs button{background:#0b1024!important;color:#d7d0ec!important;border:1px solid #a38bd433!important;border-radius:10px 10px 0 0!important}
+.fxTabs button.active{background:linear-gradient(135deg,#6e35cb,#402078)!important;color:#fff!important;border-color:#ad83ff!important;box-shadow:0 -2px 15px #854dff33}
+.fxTabs button:hover,.fxLinks button:hover,.fxLinks a:hover{border-color:#b18bff!important;transform:translateY(-1px)}
+.fxLinks button,.fxLinks a{background:#15112a!important;border-color:#5e467f!important}
+.fxLinks .botLink{background:linear-gradient(135deg,#2b965f,#135b4c)!important;color:#fff!important}
+.fxCard input,.fxCard select,.gameweekPicker,#market input,#market select{background:#0b1023!important;color:#fff!important;border:1px solid #5e507e!important;border-radius:9px!important;padding:10px}
+.fxCard input::placeholder{color:#a59abf}
+.fxCard button:not(.tab),#market button{background:#20183b;color:#f8f4ff;border:1px solid #5c4384;border-radius:9px;padding:9px 12px}
+.fxCard button.active,.fxCard button.chipActive{background:linear-gradient(135deg,#6d32c8,#3d206f)!important;color:#fff!important;border-color:#b18bff!important}
+.chip{background:#0d1328!important;color:#eee7ff!important;border-color:#5d4c7d!important}
+.chipActive{background:linear-gradient(135deg,#6d32c8,#3d206f)!important}
+.chipUsed{filter:grayscale(.6)}
+.stat{background:#ffffff0e!important;color:#d8d1ef!important;border:1px solid #ffffff1a}
+.stat b{color:var(--fx-green)!important}
+.clubTable th,.clubTable td{color:#eee8ff;border-bottom-color:#ffffff18!important}
+.clubTable th{color:#b8a7df!important}
+.fixture{background:#10142a!important;color:#f7f5ff!important;border-color:#ffffff24!important}
+.fixture time{color:#c0b4df!important}
+.clubSide img{filter:drop-shadow(0 2px 5px #0008)}
+#squad,#players,#ballerTable,#realClubStats,#playerStats,#medalsPanel,#fixtureList{color:#f7f5ff}
+#squad>*,#players>*{border-color:#ffffff22}
+#accountHub a{color:#a8ffd8}
+#playerModal{background:#050713d9!important;backdrop-filter:blur(8px)}
+@media(max-width:850px){.fxHero{align-items:flex-start;flex-direction:column}.fxLeagueBadge{flex-direction:row;align-self:flex-start;min-width:0;padding:9px 12px}.fxLeagueBadge svg{width:36px;height:36px}.fxLeagueBadge small{display:none}.fxHero:after{right:-90px}}
+@media(prefers-reduced-motion:reduce){.fxLinks button:hover,.fxLinks a:hover,.fxTabs button:hover{transform:none}}
+
+.fxDisclaimer{margin:0 auto 22px;padding:0 8px;color:#c0b6dc;font-size:11px;text-align:center;opacity:.9}

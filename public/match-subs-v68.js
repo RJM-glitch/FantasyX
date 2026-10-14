@@ -4,7 +4,8 @@
  function substitutionsHtml(f){
   const ev=Array.isArray(f?.substitutionEvents)?f.substitutionEvents:[];
   if(f?.status==='Upcoming')return '<p class="fxSubsWaiting">Substitutions appear after they happen.</p>';
-  if(!ev.length)return '<p class="fxSubsWaiting">No substitutions yet.</p>';
+  if(!f?.lineupsAvailable)return '<p class="fxSubsWaiting">Exact substitutions are not provided by the official FPL feed.</p>';
+  if(!ev.length)return '<p class="fxSubsWaiting">No substitutions reported.</p>';
   return `<div class="fxSubsList">${ev.map(x=>`<div class="fxSubRow"><b>${Number(x.minute||0)}′</b><span class="fxSubTeam">${esc(x.teamShort||'')}</span><span><i>↑</i> ${esc(x.on?.name||'Sub')}</span><span><i>↓</i> ${esc(x.off?.name||'Player')}</span></div>`).join('')}</div>`;
  }
  function lineupSummary(side,title){
@@ -19,7 +20,7 @@
     const f=fixtureData?.[i],card=document.querySelector('#fixtureStatsModal .fxStatsCard');if(!f||!card)return;
     card.querySelectorAll('.fxMatchSubsSection,.fxLineupsSection').forEach(x=>x.remove());
     const subs=document.createElement('div');subs.className='fxMatchSubsSection';subs.innerHTML=`<h3>SUBSTITUTIONS</h3>${substitutionsHtml(f)}`;card.appendChild(subs);
-    if(f.status!=='Upcoming'&&f.lineups){const line=document.createElement('div');line.className='fxLineupsSection';line.innerHTML=`<h3>PLAYERS USED</h3><div class="fxLineupGrid">${lineupSummary(f.lineups.home,f.home?.name)}${lineupSummary(f.lineups.away,f.away?.name)}</div>`;card.appendChild(line)}
+    if(f.status!=='Upcoming'&&f.lineupsAvailable&&f.lineups){const line=document.createElement('div');line.className='fxLineupsSection';line.innerHTML=`<h3>PLAYERS USED</h3><div class="fxLineupGrid">${lineupSummary(f.lineups.home,f.home?.name)}${lineupSummary(f.lineups.away,f.away?.name)}</div>`;card.appendChild(line)}
    }catch{}
   },0);
  };

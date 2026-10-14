@@ -3,36 +3,82 @@
   const SUPA='https://gjkivetatcnskoszsdzf.supabase.co';
   const KEY='sb_publishable_x-etGDngNtgDlY4d4gJsXg_Frbplf0Y2';
   const MEDALS=['🥇','🥈','🥉'];
-  const POS={GK:1,DEF:2,MID:3,FWD:4};
   let history=new Map(),winnersByGw=[],community=[],loaded=false,loading=false;
   const norm=s=>String(s||'').trim().toLowerCase();
-  function h32(...xs){let h=2166136261;for(const x of xs)for(const c of String(x)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-  function pointsForSnapshot(p,f){if(!f||f.status==='Upcoming')return 0;const min=f.status==='FT'?90:Number(f.minute||0),id=Number(p.player_id??p.id),pos=POS[String(p.position||p.pos||'').toUpperCase()]||3,seed=h32('FXPTS',id,f.id),club=String(p.club||'').toUpperCase();let pts=min>=1?1:0;if(min>=60)pts++;if(min>=25&&seed%11===0)pts+=pos===4?4:pos===3?5:6;if(min>=40&&seed%13===0)pts+=3;const home=String(f.home?.short||'').toUpperCase()===club,conceded=home?Number(f.awayScore||0):Number(f.homeScore||0);if(min>=60&&(pos===1||pos===2)&&conceded===0)pts+=4;if(min>=70&&seed%7===0)pts++;if(min>=85&&seed%17===0)pts+=2;return pts}
+  const playerId=x=>Number(x?.player_id??x?.id);
+  const playerPos=x=>String(x?.position??x?.pos??'').toUpperCase();
+  const onBench=x=>Boolean(x?.is_bench??x?.bench);
+  const isCaptain=x=>Boolean(x?.is_captain??x?.cap);
+  const isVice=x=>Boolean(x?.is_vice??x?.vice);
   function pickSnapshot(rows,gw){return rows.filter(x=>Number(x.gameweek)<=gw).sort((a,b)=>Number(b.gameweek)-Number(a.gameweek))[0]||null}
-  function scoreSquad(squad,fixtureByClub){let total=0;for(const x of (Array.isArray(squad)?squad:[])){const f=fixtureByClub.get(String(x.club||'').toUpperCase());const base=pointsForSnapshot(x,f),bench=Boolean(x.is_bench??x.bench),cap=Boolean(x.is_captain??x.cap);total+=bench?0:base*(cap?2:1)}return total}
+  function scoreSquad(squad,playerMap){
+    const rows=Array.isArray(squad)?squad:[];
+    const starters=rows.filter(x=>!onBench(x)),bench=rows.filter(onBench);
+    if(starters.length!==11||bench.length!==4)return 0;
+    const active=new Set(starters.map(playerId)),usedBench=new Set(),counts={GK:0,DEF:0,MID:0,FWD:0};
+    for(const p of starters){const pos=playerPos(p);if(counts[pos]!==undefined)counts[pos]++}
+    for(const out of starters){
+      const outId=playerId(out),outData=playerMap.get(outId)||{minutes:0};
+      if(Number(outData.minutes||0)>0)continue;
+      const outPos=playerPos(out);
+      let replacement=null;
+      for(const candidate of bench){
+        const id=playerId(candidate),pos=playerPos(candidate),data=playerMap.get(id)||{minutes:0};
+        if(usedBench.has(id)||Number(data.minutes||0)<=0)continue;
+        if(outPos==='GK'&&pos!=='GK')continue;
+        if(outPos!=='GK'&&pos==='GK')continue;
+        if(outPos!=='GK'){
+          const next={...counts};
+          next[outPos]=Math.max(0,(next[outPos]||0)-1);
+          next[pos]=(next[pos]||0)+1;
+          if(next.DEF<3||next.MID<2||next.FWD<1)continue;
+        }
+        replacement=candidate;break;
+      }
+      if(replacement){
+        const id=playerId(replacement),pos=playerPos(replacement);
+        active.delete(outId);active.add(id);usedBench.add(id);
+        counts[outPos]=Math.max(0,(counts[outPos]||0)-1);counts[pos]=(counts[pos]||0)+1;
+      }
+    }
+    const captain=rows.find(isCaptain),vice=rows.find(isVice);
+    const played=id=>Number(playerMap.get(Number(id))?.minutes||0)>0;
+    const captainId=captain&&active.has(playerId(captain))&&played(playerId(captain))
+      ?playerId(captain)
+      :vice&&active.has(playerId(vice))&&played(playerId(vice))?playerId(vice):null;
+    let total=0;
+    for(const row of rows){
+      const id=playerId(row);
+      if(!active.has(id))continue;
+      const points=Number(playerMap.get(id)?.points||0);
+      total+=points*(id===captainId?2:1);
+    }
+    return total;
+  }
   async function load(){
     if(loaded||loading)return;
     loading=true;
     try{
-      const [cr,sr]=await Promise.all([
+      const [cr,sr,tr]=await Promise.all([
         fetch('/api/community?t='+Date.now(),{cache:'no-store'}),
-        fetch(SUPA+'/rest/v1/rpc/fx_public_gameweek_squads',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
+        fetch(SUPA+'/rest/v1/rpc/fx_public_gameweek_squads',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}',cache:'no-store'}),
+        fetch(SUPA+'/rest/v1/rpc/fx_public_transfer_penalties',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:'{}',cache:'no-store'})
       ]);
-      if(!cr.ok||!sr.ok)throw Error('Medal data request failed');
-      community=(await cr.json()).teams||[];
-      const snaps=await sr.json(),byUser=new Map();
+      if(!cr.ok||!sr.ok||!tr.ok)throw Error('Medal data request failed');
+      const [communityData,snaps,penalties]=await Promise.all([cr.json(),sr.json(),tr.json()]);
+      community=communityData.teams||[];
+      const penaltyByUserGw=new Map();
+      for(const p of penalties||[]){const key=String(p.user_id)+':'+Number(p.gameweek);penaltyByUserGw.set(key,(penaltyByUserGw.get(key)||0)+Number(p.penalty_points||0))}
+      const byUser=new Map();
       for(const s of (snaps||[])){if(!byUser.has(s.user_id))byUser.set(s.user_id,[]);byUser.get(s.user_id).push(s)}
       history=new Map();winnersByGw=[];
       for(let gw=1;gw<=38;gw++){
-        const fr=await fetch('/api/fixtures?gw='+gw+'&t='+Date.now(),{cache:'no-store'});if(!fr.ok)break;const fixtures=(await fr.json()).fixtures||[];if(!fixtures.length||fixtures.some(f=>f.status!=='FT'))break;
-        const fixtureByClub=new Map();for(const f of fixtures){fixtureByClub.set(String(f.home?.short||'').toUpperCase(),f);fixtureByClub.set(String(f.away?.short||'').toUpperCase(),f)}
-        const rows=community.map(t=>{const snap=pickSnapshot(byUser.get(t.user_id)||[],gw);return{...t,gwPoints:snap?scoreSquad(snap.squad,fixtureByClub):0}}).filter(x=>norm(x.team_name)!=='my xi'||String(x.real_name||'').trim());
+        const pr=await fetch('/api/gameweek-player-points?gw='+gw+'&t='+Date.now(),{cache:'no-store'});if(!pr.ok)break;
+        const pointsData=await pr.json();if(!pointsData.complete)break;
+        const playerMap=new Map((pointsData.players||[]).map(p=>[Number(p.id),{points:Number(p.points)||0,minutes:Number(p.minutes)||0,pos:p.pos}]));
+        const rows=community.map(t=>{const snap=pickSnapshot(byUser.get(t.user_id)||[],gw),gross=snap?scoreSquad(snap.squad,playerMap):0,penalty=penaltyByUserGw.get(String(t.user_id)+':'+gw)||0;return{...t,gwPoints:gross-penalty}}).filter(x=>norm(x.team_name)!=='my xi'||String(x.real_name||'').trim());
         rows.sort((a,b)=>b.gwPoints-a.gwPoints||String(a.team_name||'').localeCompare(String(b.team_name||'')));
         let ranked=rows.filter(x=>x.gwPoints>0);
-        if(gw===1){
-          const goat=ranked.find(x=>norm(x.real_name)==='goatwaan'||norm(x.team_name)==='gombino fc');
-          if(goat){const rest=ranked.filter(x=>x.user_id!==goat.user_id);ranked=[...rest.slice(0,2),goat,...rest.slice(2)]}
-        }
         const top=ranked.slice(0,3).map((x,i)=>({...x,place:i+1,medal:MEDALS[i],gameweek:gw}));
         if(top.length){winnersByGw.push({gameweek:gw,winners:top});for(const w of top){if(!history.has(w.user_id))history.set(w.user_id,[]);history.get(w.user_id).push({gameweek:gw,place:w.place,medal:w.medal,points:w.gwPoints})}}
       }

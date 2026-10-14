@@ -1,6 +1,7 @@
 import express from 'express';
 import {randomBytes,createHash} from 'node:crypto';
-import {getBoot,gameweek,standings,warm} from './fpl-data.js';
+import {getBoot,gameweek,standings,warm,teams} from './fpl-data.js';
+import {getEventLive,gameweekMeta} from './fpl-live.js';
 
 const app=express();
 app.use(express.json({limit:'1mb'}));
@@ -26,68 +27,124 @@ function authRate(req,res,next){const ip=String(req.headers['x-forwarded-for']||
 async function currentUser(req){const h=tokenHash(req);if(!h)return null;try{return(await rpc('fx_me',{p_token_hash:h}))?.[0]||null}catch{return null}}
 async function requireUser(req,res){const u=await currentUser(req);if(!u)res.status(401).json({error:'Not signed in.'});return u}
 
-function h32(...xs){let h=2166136261;for(const x of xs)for(const c of String(x)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-function playChance(p){const raw=p?.chance_of_playing_next_round;if(raw!==null&&raw!==undefined&&Number.isFinite(Number(raw)))return Math.max(0,Math.min(100,Number(raw)));return String(p?.status||'a')==='a'?100:0}
-function availableForFixture(p,f){const c=playChance(p);if(c<=0)return false;if(c>=100)return true;return h32('FXAVAIL',f.id,p.id)%100<c}
-function ordered(pool,...seed){return [...pool].sort((a,b)=>h32(...seed,a.id)-h32(...seed,b.id)||Number(a.id)-Number(b.id))}
-function fixtureParticipation(boot,f,legacy=false){
-  const map=new Map(),matchMin=f.status==='FT'?90:f.status==='LIVE'?Math.max(0,Math.min(90,Number(f.minute||0))):0;
-  for(const p of boot.elements||[])if(Number(p.team)===Number(f.home.id)||Number(p.team)===Number(f.away.id))map.set(Number(p.id),{minutes:0,starter:false,subOn:null,subOff:null,played:false});
-  if(matchMin<=0)return map;
-  if(legacy){for(const p of boot.elements||[])if(Number(p.team)===Number(f.home.id)||Number(p.team)===Number(f.away.id))map.set(Number(p.id),{minutes:matchMin,starter:true,subOn:null,subOff:null,played:true});return map}
-  for(const teamId of [f.home.id,f.away.id]){
-    const all=(boot.elements||[]).filter(p=>Number(p.team)===Number(teamId)),eligible=ordered(all.filter(p=>availableForFixture(p,f)),'FXLINEUP',f.id,teamId),chosen=[],chosenIds=new Set(),targets={1:1,2:4,3:4,4:2};
-    for(const pos of [1,2,3,4])for(const p of eligible.filter(x=>Number(x.element_type)===pos).slice(0,targets[pos])){chosen.push(p);chosenIds.add(Number(p.id))}
-    for(const p of eligible)if(chosen.length<11&&!chosenIds.has(Number(p.id))){chosen.push(p);chosenIds.add(Number(p.id))}
-    const bench=eligible.filter(p=>!chosenIds.has(Number(p.id))),subIns=ordered(bench.filter(p=>Number(p.element_type)!==1),'FXSUBIN',f.id,teamId).slice(0,5),outPool=ordered(chosen.filter(p=>Number(p.element_type)!==1),'FXSUBOUT',f.id,teamId),usedOut=new Set(),subMinutes=[55,62,68,74,80];
-    const pairs=[];
-    for(let i=0;i<subIns.length;i++){
-      const incoming=subIns[i];let outgoing=outPool.find(p=>!usedOut.has(Number(p.id))&&Number(p.element_type)===Number(incoming.element_type));
-      if(!outgoing)outgoing=outPool.find(p=>!usedOut.has(Number(p.id)));if(!outgoing)break;usedOut.add(Number(outgoing.id));pairs.push({incoming,outgoing,minute:subMinutes[i]});
-    }
-    for(const p of chosen)map.set(Number(p.id),{minutes:matchMin,starter:true,subOn:null,subOff:null,played:matchMin>0});
-    for(const pair of pairs){
-      const {incoming,outgoing,minute}=pair;
-      if(matchMin>=minute){map.set(Number(outgoing.id),{minutes:minute,starter:true,subOn:null,subOff:minute,played:true});map.set(Number(incoming.id),{minutes:Math.max(1,matchMin-minute),starter:false,subOn:minute,subOff:null,played:true})}
-    }
-  }
-  return map;
-}
-function pointsForPlayer(p,f,minutes){if(!f||f.status==='Upcoming')return 0;const min=Math.max(0,Number(minutes||0));if(min<=0)return 0;const seed=h32('FXPTS',p.id,f.id),pos=p.element_type;let pts=1;if(min>=60)pts++;if(min>=25&&seed%11===0)pts+=pos===4?4:pos===3?5:6;if(min>=40&&seed%13===0)pts+=3;if(min>=60&&(pos===1||pos===2)&&((p.team===f.home.id?Number(f.awayScore||0):Number(f.homeScore||0))===0))pts+=4;if(min>=70&&seed%7===0)pts++;if(min>=85&&seed%17===0)pts+=2;return pts}
-async function pointMapForGameweek(gw,boot){
-  const fixtures=await gameweek(gw),points=new Map(),info=new Map();
-  for(const p of boot.elements||[]){points.set(Number(p.id),0);info.set(Number(p.id),{minutes:0,starter:false,subOn:null,subOff:null,played:false})}
-  for(const f of fixtures){const part=fixtureParticipation(boot,f,Number(gw)===1);for(const p of boot.elements||[]){if(Number(p.team)!==Number(f.home.id)&&Number(p.team)!==Number(f.away.id))continue;const pi=part.get(Number(p.id))||{minutes:0,starter:false,played:false};info.set(Number(p.id),pi);points.set(Number(p.id),pointsForPlayer(p,f,pi.minutes))}}
-  return{fixtures,points,info,complete:fixtures.length>0&&fixtures.every(f=>f.status==='FT')};
-}
-async function fantasyPoints(){const boot=await getBoot(),out=new Map((boot.elements||[]).map(p=>[Number(p.id),0]));for(let gw=1;gw<=38;gw++){const g=await pointMapForGameweek(gw,boot);if(g.fixtures.every(f=>f.status==='Upcoming'))break;for(const [id,pts] of g.points)out.set(id,(out.get(id)||0)+Number(pts||0))}return out}
-function pick(pool,...seed){return pool.length?pool[h32(...seed)%pool.length]:null}
-function lineupPayload(boot,f){
-  const part=fixtureParticipation(boot,f,Number(f.gameweek)===1),teamRows={};
-  for(const team of [f.home,f.away]){
-    const pool=(boot.elements||[]).filter(p=>Number(p.team)===Number(team.id)),rows=pool.map(p=>({id:Number(p.id),name:p.web_name,pos:Number(p.element_type),...(part.get(Number(p.id))||{minutes:0,starter:false,subOn:null,subOff:null,played:false})})),starters=rows.filter(x=>x.starter).sort((a,b)=>a.pos-b.pos||a.name.localeCompare(b.name)),usedSubs=rows.filter(x=>x.subOn!==null).sort((a,b)=>a.subOn-b.subOn),bench=rows.filter(x=>!x.starter&&x.subOn===null);
-    teamRows[team.short]={starters,usedSubs,bench};
-  }
-  const events=[];for(const team of [f.home,f.away]){const rows=teamRows[team.short]?.usedSubs||[];for(const on of rows){const off=(teamRows[team.short]?.starters||[]).find(x=>Number(x.subOff)===Number(on.subOn));events.push({minute:on.subOn,teamShort:team.short,teamName:team.name,on:{id:on.id,name:on.name},off:off?{id:off.id,name:off.name}:null})}}
-  events.sort((a,b)=>Number(a.minute)-Number(b.minute));return{home:teamRows[f.home.short],away:teamRows[f.away.short],events};
-}
-async function enrichFixtures(fixtures,boot){return fixtures.map(f=>{const l=lineupPayload(boot,f);return{...f,lineups:{home:l.home,away:l.away},substitutionEvents:l.events}})}
+async function pointMapForGameweek(gw, boot) {
+  const fixtures = await gameweek(gw);
+  const points = new Map((boot.elements || []).map(p => [Number(p.id), 0]));
+  const info = new Map((boot.elements || []).map(p => [Number(p.id), {
+    minutes: 0, starter: false, subOn: null, subOff: null, played: false
+  }]));
+  const eventStats = new Map();
+  const started = fixtures.some(f => f.status !== 'Upcoming');
+  const complete = fixtures.length > 0 && fixtures.every(f => f.status === 'FT');
 
-async function fantasySeasonStats(){
-  const boot=await getBoot(),teamInfo=new Map((boot.teams||[]).map(t=>[t.id,t])),pools=new Map(),playerRows=new Map();
-  for(const p of boot.elements||[]){if(!pools.has(p.team))pools.set(p.team,[]);pools.get(p.team).push(p);const t=teamInfo.get(p.team),photoId=String(p.photo||'').replace(/\.jpg$/i,'');playerRows.set(p.id,{id:p.id,name:p.web_name,club:t?.name||'',clubShort:t?.short_name||'',clubBadge:t?`https://resources.premierleague.com/premierleague/badges/70/t${t.code}.png`:'',photo:`https://resources.premierleague.com/premierleague/photos/players/250x250/p${photoId}.png`,goals:0,assists:0,yellowCards:0,redCards:0,minutes:0})}
-  const clubRows=new Map((boot.teams||[]).map(t=>[t.id,{team:t.name,short:t.short_name,badge:`https://resources.premierleague.com/premierleague/badges/70/t${t.code}.png`,played:0,wins:0,draws:0,losses:0,goals:0,assists:0,yellowCards:0,redCards:0}]));
-  for(let gw=1;gw<=38;gw++){
-    const fixtures=await gameweek(gw);if(fixtures.every(f=>f.status==='Upcoming'))break;
-    for(const f of fixtures){if(f.status==='Upcoming')continue;const part=fixtureParticipation(boot,f,gw===1);for(const [pid,pi] of part)if(pi.minutes>0&&playerRows.has(pid))playerRows.get(pid).minutes+=pi.minutes;
-      for(const side of [0,1]){const team=side===0?f.home:f.away,score=side===0?f.homeScore:f.awayScore,allPool=pools.get(team.id)||[],pool=gw===1?allPool:allPool.filter(p=>(part.get(Number(p.id))?.minutes||0)>0),club=clubRows.get(team.id);if(!club)continue;club.played++;
-        for(let g=0;g<score;g++){const scorer=pick(pool,'FXGOAL',f.id,team.id,g);if(scorer){playerRows.get(scorer.id).goals++;club.goals++}if(pool.length>1&&h32('FXASSISTED',f.id,team.id,g)%5!==0){let assist=pick(pool,'FXASSIST',f.id,team.id,g);if(assist&&scorer&&assist.id===scorer.id)assist=pool[(pool.indexOf(assist)+1)%pool.length];if(assist){playerRows.get(assist.id).assists++;club.assists++}}}
-        const ys=Number(f.stats?.yellowCards?.[side]||0),rs=Number(f.stats?.redCards?.[side]||0);for(let c=0;c<ys;c++){const pl=pick(pool,'FXYELLOW',f.id,team.id,c);if(pl){playerRows.get(pl.id).yellowCards++;club.yellowCards++}}for(let c=0;c<rs;c++){const pl=pick(pool,'FXRED',f.id,team.id,c);if(pl){playerRows.get(pl.id).redCards++;club.redCards++}}
+  if (started) {
+    const live = await getEventLive(gw, { finished: complete });
+    for (const row of live.elements || []) {
+      const id = Number(row.id);
+      const stats = row.stats || {};
+      if (!points.has(id)) continue;
+      points.set(id, Number(stats.total_points) || 0);
+      eventStats.set(id, stats);
+      info.set(id, {
+        minutes: Number(stats.minutes) || 0,
+        starter: Number(stats.starts) > 0,
+        subOn: null,
+        subOff: null,
+        played: Number(stats.minutes) > 0
+      });
+    }
+  }
+
+  return { fixtures, points, info, eventStats, complete };
+}
+
+async function fantasyPoints() {
+  const boot = await getBoot();
+  return new Map((boot.elements || []).map(p => [Number(p.id), Number(p.total_points) || 0]));
+}
+
+async function enrichFixtures(fixtures) {
+  // The official FPL public feed does not provide full starting XIs or exact substitution times.
+  // Do not fabricate lineups or events when that information is unavailable.
+  return fixtures.map(f => ({ ...f, lineups: null, lineupsAvailable: false, substitutionEvents: [] }));
+}
+
+async function fantasySeasonStats() {
+  const boot = await getBoot();
+  const teamInfo = new Map((boot.teams || []).map(t => [Number(t.id), t]));
+  const badgeInfo = teams(boot);
+  const playerById = new Map((boot.elements || []).map(p => [Number(p.id), p]));
+  const playerRows = new Map();
+  for (const p of boot.elements || []) {
+    const team = teamInfo.get(Number(p.team));
+    const photoId = String(p.photo || '').replace(/\.jpg$/i, '');
+    playerRows.set(Number(p.id), {
+      id: Number(p.id),
+      name: p.web_name,
+      club: team?.name || '',
+      clubShort: team?.short_name || '',
+      clubBadge: badgeInfo.get(Number(p.team))?.badge || '',
+      photo: photoId ? 'https://resources.premierleague.com/premierleague/photos/players/250x250/p' + photoId + '.png' : '/player.svg',
+      goals: 0, assists: 0, yellowCards: 0, redCards: 0, minutes: 0, points: 0
+    });
+  }
+  const clubRows = new Map((boot.teams || []).map(t => [Number(t.id), {
+    team: t.name, short: t.short_name,
+    badge: badgeInfo.get(Number(t.id))?.badge || '', badgeFallback: badgeInfo.get(Number(t.id))?.badgeFallback || '',
+    played: 0, wins: 0, draws: 0, losses: 0, goals: 0, assists: 0, yellowCards: 0, redCards: 0
+  }]));
+
+  for (let gw = 1; gw <= 38; gw++) {
+    const fixtures = await gameweek(gw);
+    if (!fixtures.length || fixtures.every(f => f.status === 'Upcoming')) break;
+    const complete = fixtures.every(f => f.status === 'FT');
+    const live = await getEventLive(gw, { finished: complete });
+
+    for (const row of live.elements || []) {
+      const id = Number(row.id);
+      const stats = row.stats || {};
+      const player = playerRows.get(id);
+      const sourcePlayer = playerById.get(id);
+      if (!player || !sourcePlayer) continue;
+      const goals = Number(stats.goals_scored) || 0;
+      const assists = Number(stats.assists) || 0;
+      const yellow = Number(stats.yellow_cards) || 0;
+      const red = Number(stats.red_cards) || 0;
+      player.goals += goals;
+      player.assists += assists;
+      player.yellowCards += yellow;
+      player.redCards += red;
+      player.minutes += Number(stats.minutes) || 0;
+      player.points += Number(stats.total_points) || 0;
+      const club = clubRows.get(Number(sourcePlayer.team));
+      if (club) {
+        club.assists += assists;
+        club.yellowCards += yellow;
+        club.redCards += red;
       }
     }
+
+    for (const fixture of fixtures) {
+      if (fixture.status !== 'FT' || fixture.homeScore === null || fixture.awayScore === null) continue;
+      const home = clubRows.get(Number(fixture.home.id));
+      const away = clubRows.get(Number(fixture.away.id));
+      if (!home || !away) continue;
+      const homeGoals = Number(fixture.homeScore);
+      const awayGoals = Number(fixture.awayScore);
+      home.played++; away.played++;
+      home.goals += homeGoals; away.goals += awayGoals;
+      if (homeGoals > awayGoals) { home.wins++; away.losses++; }
+      else if (homeGoals < awayGoals) { away.wins++; home.losses++; }
+      else { home.draws++; away.draws++; }
+    }
   }
-  const pts=await fantasyPoints();for(const [id,row] of playerRows)row.points=pts.get(id)||0;
-  return{clubs:[...clubRows.values()].sort((a,b)=>a.team.localeCompare(b.team)),players:[...playerRows.values()].filter(p=>p.goals||p.assists||p.yellowCards||p.redCards||p.points).sort((a,b)=>a.club.localeCompare(b.club)||a.name.localeCompare(b.name))};
+
+  return {
+    clubs: [...clubRows.values()].sort((a, b) => a.team.localeCompare(b.team)),
+    players: [...playerRows.values()]
+      .filter(p => p.goals || p.assists || p.yellowCards || p.redCards || p.points)
+      .sort((a, b) => a.club.localeCompare(b.club) || a.name.localeCompare(b.name))
+  };
 }
 
 function trackTransferActivity(rows){
@@ -96,15 +153,33 @@ function trackTransferActivity(rows){
   for(const uid of [...PREV_SQUADS.keys()])if(!grouped.has(uid))PREV_SQUADS.delete(uid);
 }
 
-const SPECIAL_TRANSFER_UNTIL=Date.parse('2026-09-21T11:07:30+02:00');
-function transferWindowState(now=Date.now()){
-  const firstKickoff=Date.parse('2026-09-18T14:02:00+02:00'),baseMidnight=Date.parse('2026-09-18T00:00:00+02:00'),day=86400000;
-  const dayIndex=Math.max(0,Math.floor((now-baseMidnight)/day)),todayGw=Math.min(38,2+dayIndex),start=baseMidnight+dayIndex*day+(14*3600000+2*60000),end=baseMidnight+dayIndex*day+(14*3600000+30*60000);
-  if(now<SPECIAL_TRANSFER_UNTIL)return{open:true,targetGw:todayGw,penalty:false,special:true,closes_at:new Date(SPECIAL_TRANSFER_UNTIL).toISOString(),message:`Special 10-minute transfer window is OPEN for Gameweek ${todayGw}. Transfers are free.`};
-  if(now<firstKickoff)return{open:false,targetGw:2,penalty:false,special:false,message:'Transfers are closed until the next FantasyX transfer window.'};
-  if(now>=start&&now<end)return{open:false,targetGw:todayGw,penalty:todayGw>=3,special:false,message:`Transfers are locked while Gameweek ${todayGw} is being played.`};
-  const targetGw=now<start?todayGw:Math.min(38,todayGw+1);
-  return{open:true,targetGw,penalty:targetGw>=3,special:false,message:targetGw>=3?`Transfers are open for Gameweek ${targetGw}. Each player brought in costs -4 points.`:`Transfers are open for Gameweek ${targetGw}.`};
+async function transferWindowState(now = Date.now()) {
+  const boot = await getBoot();
+  const meta = gameweekMeta(boot, now);
+  const targetGw = meta.deadlineGameweek;
+  if (!targetGw || !meta.deadline) {
+    return {
+      open: false,
+      targetGw: meta.currentGameweek,
+      penalty: false,
+      special: false,
+      message: 'No upcoming official FPL deadline is available.'
+    };
+  }
+  const deadline = Date.parse(meta.deadline);
+  const deadlineLocal = new Intl.DateTimeFormat('en-ZA', {
+    timeZone: 'Africa/Johannesburg',
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(new Date(deadline));
+  return {
+    open: true,
+    targetGw,
+    penalty: Number(targetGw) >= 3,
+    special: false,
+    closes_at: new Date(deadline).toISOString(),
+    message: 'Transfers are open for Gameweek ' + targetGw + ' until ' + deadlineLocal + ' (South Africa time).'
+  };
 }
 
 function entryId(x){return Number(x?.player_id??x?.id)}
@@ -166,15 +241,171 @@ app.get('/api/auth/me',async(req,res)=>res.json({user:await currentUser(req)}));
 app.get('/api/account/profile',async(req,res)=>{try{if(!await requireUser(req,res))return;res.json({profile:(await rpc('fx_get_profile',{p_token_hash:tokenHash(req)}))?.[0]||null})}catch(e){res.status(500).json({error:String(e.message)})}});
 app.put('/api/account/profile',async(req,res)=>{try{if(!await requireUser(req,res))return;res.json({profile:(await rpc('fx_save_profile',{p_token_hash:tokenHash(req),p_real_name:String(req.body?.real_name||''),p_team_name:String(req.body?.team_name||'My XI'),p_favorite_team:String(req.body?.favorite_team||''),p_favorite_player:String(req.body?.favorite_player||'')}))?.[0]||null})}catch(e){res.status(500).json({error:String(e.message)})}});
 app.get('/api/account/squad',async(req,res)=>{try{if(!await requireUser(req,res))return;res.json({squad:await rpc('fx_get_squad',{p_token_hash:tokenHash(req)})||[]})}catch(e){res.status(500).json({error:String(e.message)})}});
-app.put('/api/account/squad',async(req,res)=>{try{if(!await requireUser(req,res))return;const h=tokenHash(req),next=(req.body?.squad||[]).slice(0,15),old=await rpc('fx_get_squad',{p_token_hash:h})||[],state=transferWindowState(),recovery=old.length===0&&next.length>0;if(!state.open&&!recovery)return res.status(423).json({error:state.message});const oldIds=new Set(old.map(x=>Number(x.player_id))),nextIds=new Set(next.map(x=>Number(x.id))),incoming=[...nextIds].filter(id=>!oldIds.has(id)).length;if(!recovery&&state.penalty&&incoming>0)await rpc('fx_record_transfer_penalty',{p_token_hash:h,p_gameweek:state.targetGw,p_transfers:incoming});await rpc('fx_save_squad',{p_token_hash:h,p_squad:next});try{trackTransferActivity(await rpc('fx_public_squads',{}))}catch{}res.json({ok:true,recovery,gameweek:state.targetGw,transfers_in:recovery?0:incoming,penalty:recovery?0:(state.penalty?incoming*4:0)})}catch(e){res.status(500).json({error:String(e.message)})}});
+function validateSquadPayload(squad) {
+  if (!Array.isArray(squad)) return 'Squad must be a list of players.';
+  if (squad.length > 15) return 'A squad cannot contain more than 15 players.';
+  const ids = squad.map(p => Number(p?.id ?? p?.player_id));
+  if (ids.some(id => !Number.isInteger(id) || id <= 0)) return 'Every player must have a valid player ID.';
+  if (new Set(ids).size !== ids.length) return 'Your squad contains duplicate players.';
+
+  const positionLimits = { GK: 2, DEF: 5, MID: 5, FWD: 3 };
+  const counts = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+  const clubs = new Map();
+  let budget = 0;
+  for (const player of squad) {
+    const pos = String(player?.pos ?? player?.position ?? '').toUpperCase();
+    if (!(pos in positionLimits)) return 'A player has an invalid position.';
+    counts[pos]++;
+    if (counts[pos] > positionLimits[pos]) return 'Too many players in position ' + pos + '.';
+    const price = Number(player?.price);
+    if (!Number.isFinite(price) || price < 0) return 'A player has an invalid price.';
+    budget += price;
+    const club = String(player?.club ?? '').trim().toUpperCase();
+    if (!club) return 'A player is missing a club.';
+    clubs.set(club, (clubs.get(club) || 0) + 1);
+    if (clubs.get(club) > 3) return 'You cannot select more than three players from one club.';
+  }
+  if (budget > 100.0001) return 'Your squad exceeds the £100.0m budget.';
+
+  const captain = squad.filter(p => Boolean(p?.is_captain ?? p?.cap));
+  const vice = squad.filter(p => Boolean(p?.is_vice ?? p?.vice));
+  if (captain.length > 1) return 'Choose only one captain.';
+  if (vice.length > 1) return 'Choose only one vice-captain.';
+  if (captain.length && vice.length && Number(captain[0]?.id ?? captain[0]?.player_id) === Number(vice[0]?.id ?? vice[0]?.player_id)) {
+    return 'Your captain and vice-captain must be different players.';
+  }
+
+  if (squad.length === 15) {
+    if (counts.GK !== 2 || counts.DEF !== 5 || counts.MID !== 5 || counts.FWD !== 3) {
+      return 'A complete squad must contain 2 goalkeepers, 5 defenders, 5 midfielders and 3 forwards.';
+    }
+    const benchFlags = squad.map(p => p?.is_bench ?? p?.bench);
+    if (!benchFlags.every(value => typeof value === 'boolean')) return 'The starting XI and bench could not be identified.';
+    const starters = squad.filter(p => !(p?.is_bench ?? p?.bench));
+    const bench = squad.filter(p => Boolean(p?.is_bench ?? p?.bench));
+    const startCounts = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const player of starters) startCounts[String(player?.pos ?? player?.position ?? '').toUpperCase()]++;
+    if (starters.length !== 11 || bench.length !== 4 || startCounts.GK !== 1 ||
+        startCounts.DEF < 3 || startCounts.DEF > 5 ||
+        startCounts.MID < 2 || startCounts.MID > 5 ||
+        startCounts.FWD < 1 || startCounts.FWD > 3) {
+      return 'Your starting XI, formation or four-player bench is invalid.';
+    }
+    if (captain.length && Boolean(captain[0]?.is_bench ?? captain[0]?.bench)) return 'Your captain must be in the starting XI.';
+    if (vice.length && Boolean(vice[0]?.is_bench ?? vice[0]?.bench)) return 'Your vice-captain must be in the starting XI.';
+  }
+  return null;
+}
+
+app.put('/api/account/squad', async (req, res) => {
+  try {
+    if (!await requireUser(req, res)) return;
+    const next = req.body?.squad;
+    const validationError = validateSquadPayload(next);
+    if (validationError) return res.status(400).json({ error: validationError });
+
+    const h = tokenHash(req);
+    const old = await rpc('fx_get_squad', { p_token_hash: h }) || [];
+    const state = await transferWindowState();
+    const recovery = old.length === 0 && next.length > 0;
+    const buildingSquad = old.length < 15 || next.length < 15;
+    if (!state.open && !recovery) return res.status(423).json({ error: state.message });
+
+    const oldIds = new Set(old.map(x => Number(x.player_id)));
+    const nextIds = new Set(next.map(x => Number(x.id ?? x.player_id)));
+    const incoming = [...nextIds].filter(id => !oldIds.has(id)).length;
+
+    await rpc('fx_save_squad', { p_token_hash: h, p_squad: next });
+    if (!recovery && !buildingSquad && state.penalty && incoming > 0) {
+      await rpc('fx_record_transfer_penalty', { p_token_hash: h, p_gameweek: state.targetGw, p_transfers: incoming });
+    }
+    try { trackTransferActivity(await rpc('fx_public_squads', {})); } catch {}
+    res.json({
+      ok: true,
+      recovery,
+      building_squad: buildingSquad,
+      gameweek: state.targetGw,
+      transfers_in: recovery || buildingSquad ? 0 : incoming,
+      penalty: recovery || buildingSquad ? 0 : (state.penalty ? incoming * 4 : 0)
+    });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message) });
+  }
+});
 app.get('/api/account/points',async(req,res)=>{try{const u=await requireUser(req,res);if(!u)return;const uid=String(u.user_id||u.id||''),row=(await liveManagerRows()).find(x=>String(x.user_id)===uid);res.set('Cache-Control','no-store');res.json(row?{points:row.live_points,historical_points:row.historical_points,gameweek_points:row.gameweek_points,transfer_penalty:row.transfer_penalty,current_gameweek:row.current_gameweek,auto_substitutions:row.auto_substitutions}:{points:0,historical_points:0,gameweek_points:0,transfer_penalty:0,current_gameweek:2,auto_substitutions:[]})}catch(e){res.status(500).json({error:String(e.message)})}});
-app.get('/api/transfer-window',(req,res)=>{res.set('Cache-Control','no-store');res.json(transferWindowState())});
+app.get('/api/transfer-window', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json(await transferWindowState());
+  } catch (e) {
+    res.status(502).json({ open: false, penalty: false, special: false, message: 'Official FPL deadline unavailable.', error: String(e.message) });
+  }
+});
+app.get('/api/gameweek', async (req, res) => {
+  try {
+    const boot = await getBoot();
+    res.set('Cache-Control', 'no-store');
+    res.json({ ...gameweekMeta(boot), transferWindow: await transferWindowState() });
+  } catch (e) {
+    res.status(502).json({ error: 'Official FPL gameweek data unavailable.', detail: String(e.message) });
+  }
+});
 app.post('/api/account/join-league',async(req,res)=>{try{if(!await requireUser(req,res))return;res.json({league:(await rpc('fx_join_league',{p_token_hash:tokenHash(req),p_code:String(req.body?.code||'')}))?.[0]||null})}catch(e){res.status(500).json({error:String(e.message)})}});
 
-app.get('/api/players',async(req,res)=>{try{const [d,pts]=await Promise.all([getBoot(),fantasyPoints()]),ts=d.teams.map(t=>({id:t.id,name:t.name,short:t.short_name,code:t.code,badge:`https://resources.premierleague.com/premierleague/badges/70/t${t.code}.png`})),tm=new Map(ts.map(t=>[t.id,t])),types={1:'GK',2:'DEF',3:'MID',4:'FWD'},players=d.elements.filter(p=>tm.has(p.team)).map(p=>{const t=tm.get(p.team),photoId=String(p.photo||'').replace(/\.jpg$/i,''),raw=p.chance_of_playing_next_round,chance=raw===null||raw===undefined?(p.status==='a'?100:0):Number(raw);return{id:p.id,name:p.web_name,club:t.short,clubName:t.name,clubBadge:t.badge,pos:types[p.element_type],price:p.now_cost/10,totalPoints:pts.get(Number(p.id))||0,seasonPoints:pts.get(Number(p.id))||0,photo:`https://resources.premierleague.com/premierleague/photos/players/250x250/p${photoId}.png`,availabilityChance:chance,availabilityStatus:String(p.status||'a'),injuryNews:String(p.news||''),officialTransfersIn:Number(p.transfers_in_event||0),officialTransfersOut:Number(p.transfers_out_event||0)}});res.set('Cache-Control','no-store');res.json({teams:ts,players})}catch{res.status(502).json({players:[]})}});
-app.get('/api/gameweek-player-points',async(req,res)=>{try{const gw=Math.max(1,Math.min(38,Number(req.query.gw)||1)),boot=await getBoot(),g=await pointMapForGameweek(gw,boot),tm=new Map((boot.teams||[]).map(t=>[Number(t.id),t])),types={1:'GK',2:'DEF',3:'MID',4:'FWD'};const players=(boot.elements||[]).map(p=>{const pi=g.info.get(Number(p.id))||{minutes:0,starter:false,subOn:null,subOff:null,played:false},t=tm.get(Number(p.team)),photoId=String(p.photo||'').replace(/\.jpg$/i,'');return{id:Number(p.id),name:p.web_name,pos:types[p.element_type],club:t?.short_name||'',clubName:t?.name||'',photo:`https://resources.premierleague.com/premierleague/photos/players/250x250/p${photoId}.png`,points:Number(g.points.get(Number(p.id))||0),minutes:Number(pi.minutes||0),played:Boolean(pi.played),starter:Boolean(pi.starter),subOn:pi.subOn,subOff:pi.subOff}});res.set('Cache-Control','no-store');res.json({gameweek:gw,complete:g.complete,legacy:gw===1,players})}catch(e){res.status(500).json({players:[],error:String(e.message)})}});
+app.get('/api/players', async (req, res) => {
+  try {
+    const boot = await getBoot();
+    const pts = await fantasyPoints();
+    const meta = gameweekMeta(boot);
+    let eventStats = new Map();
+    try {
+      const currentFixtures = await gameweek(meta.currentGameweek);
+      if (currentFixtures.some(f => f.status !== 'Upcoming')) {
+        const live = await getEventLive(meta.currentGameweek, { finished: currentFixtures.every(f => f.status === 'FT') });
+        eventStats = new Map((live.elements || []).map(row => [Number(row.id), row.stats || {}]));
+      }
+    } catch {
+      // Keep the player market available if the optional current-event detail endpoint is temporarily down.
+    }
+    const ts = [...teams(boot).values()];
+    const tm = new Map(ts.map(t => [t.id, t]));
+    const types = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD' };
+    const players = (boot.elements || []).filter(p => tm.has(p.team)).map(p => {
+      const team = tm.get(p.team);
+      const photoId = String(p.photo || '').replace(/\.jpg$/i, '');
+      const stats = eventStats.get(Number(p.id)) || null;
+      const rawChance = p.chance_of_playing_next_round;
+      const chance = rawChance === null || rawChance === undefined ? (p.status === 'a' ? 100 : 0) : Number(rawChance);
+      return {
+        id: Number(p.id), name: p.web_name, club: team.short, clubName: team.name,
+        clubBadge: team.badge, clubBadgeFallback: team.badgeFallback,
+        pos: types[p.element_type], price: Number(p.now_cost) / 10,
+        totalPoints: Number(pts.get(Number(p.id)) || 0),
+        seasonPoints: Number(p.total_points) || 0,
+        eventPoints: Number(stats?.total_points ?? p.event_points) || 0,
+        eventStats: stats,
+        goals: Number(p.goals_scored) || 0,
+        assists: Number(p.assists) || 0,
+        minutes: Number(p.minutes) || 0,
+        cleanSheets: Number(p.clean_sheets) || 0,
+        yellowCards: Number(p.yellow_cards) || 0,
+        redCards: Number(p.red_cards) || 0,
+        photo: photoId ? 'https://resources.premierleague.com/premierleague/photos/players/250x250/p' + photoId + '.png' : '/player.svg',
+        availabilityChance: chance, availabilityStatus: String(p.status || 'a'),
+        injuryNews: String(p.news || ''),
+        officialTransfersIn: Number(p.transfers_in_event || 0),
+        officialTransfersOut: Number(p.transfers_out_event || 0)
+      };
+    });
+    res.set('Cache-Control', 'no-store');
+    res.json({ gameweek: meta.currentGameweek, teams: ts, players });
+  } catch (e) {
+    res.status(502).json({ players: [], error: String(e.message) });
+  }
+});
+app.get('/api/gameweek-player-points',async(req,res)=>{try{const gw=Math.max(1,Math.min(38,Number(req.query.gw)||1)),boot=await getBoot(),g=await pointMapForGameweek(gw,boot),tm=new Map((boot.teams||[]).map(t=>[Number(t.id),t])),types={1:'GK',2:'DEF',3:'MID',4:'FWD'};const players=(boot.elements||[]).map(p=>{const id=Number(p.id),pi=g.info.get(id)||{minutes:0,starter:false,subOn:null,subOff:null,played:false},t=tm.get(Number(p.team)),photoId=String(p.photo||'').replace(/\.jpg$/i,'');return{id,name:p.web_name,pos:types[p.element_type],club:t?.short_name||'',clubName:t?.name||'',photo:photoId?`https://resources.premierleague.com/premierleague/photos/players/250x250/p${photoId}.png`:'/player.svg',points:Number(g.points.get(id)||0),minutes:Number(pi.minutes||0),played:Boolean(pi.played),starter:Boolean(pi.starter),subOn:pi.subOn,subOff:pi.subOff,stats:g.eventStats?.get(id)||null}});res.set('Cache-Control','no-store');res.json({gameweek:gw,complete:g.complete,legacy:gw===1,players})}catch(e){res.status(500).json({players:[],error:String(e.message)})}});
 app.get('/api/fantasy-trends',async(req,res)=>{try{const [squads,boot]=await Promise.all([rpc('fx_public_squads',{}),getBoot()]);trackTransferActivity(squads);const names=new Map((boot.elements||[]).map(p=>[Number(p.id),p.web_name]));const incoming=[...TRANSFER_IN].map(([id,count])=>({id,name:names.get(id)||'Player',count})).sort((a,b)=>b.count-a.count).slice(0,5),outgoing=[...TRANSFER_OUT].map(([id,count])=>({id,name:names.get(id)||'Player',count})).sort((a,b)=>b.count-a.count).slice(0,5);res.set('Cache-Control','no-store');res.json({since:'service start',in:incoming,out:outgoing})}catch(e){res.status(500).json({in:[],out:[],error:String(e.message)})}});
-app.get('/api/fixtures',async(req,res)=>{try{const gw=Math.max(1,Math.min(38,Number(req.query.gw)||1)),boot=await getBoot(),fixtures=await gameweek(gw);res.set('Cache-Control','no-store');res.json({gameweek:gw,fixtures:await enrichFixtures(fixtures,boot)})}catch{res.status(502).json({fixtures:[]})}});
+app.get('/api/fixtures',async(req,res)=>{try{const gw=Math.max(1,Math.min(38,Number(req.query.gw)||1)),boot=await getBoot(),fixtures=await gameweek(gw);res.set('Cache-Control','no-store');res.json({gameweek:gw,fixtures:await enrichFixtures(fixtures)})}catch{res.status(502).json({fixtures:[]})}});
 app.get('/api/football-data',async(req,res)=>{try{const gw=Math.max(1,Math.min(38,Number(req.query.gw)||1)),boot=await getBoot(),[fixtures,table]=await Promise.all([gameweek(gw),standings()]);res.set('Cache-Control','no-store');res.json({gameweek:gw,season:'2026/27',fixtures:await enrichFixtures(fixtures,boot),table})}catch{res.status(502).json({fixtures:[],table:[]})}});
 app.get('/api/fantasy-stats',async(req,res)=>{try{res.set('Cache-Control','no-store');res.json({source:'FantasyX fixtures',...(await fantasySeasonStats())})}catch(e){res.status(502).json({clubs:[],players:[],error:String(e.message)})}});
 app.get('/api/real-club-stats',async(req,res)=>{try{res.set('Cache-Control','no-store');res.json({source:'FantasyX fixtures',...(await fantasySeasonStats())})}catch(e){res.status(502).json({clubs:[],players:[],error:String(e.message)})}});
