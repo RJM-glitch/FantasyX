@@ -10,6 +10,7 @@ const meta = gameweekMeta({
   ]
 }, now);
 assert.equal(meta.currentGameweek, 7);
+assert.equal(meta.latestCompletedGameweek, 6);
 assert.equal(meta.nextGameweek, 8);
 assert.equal(meta.deadlineGameweek, 8);
 assert.equal(meta.deadline, '2026-10-20T10:00:00Z');
