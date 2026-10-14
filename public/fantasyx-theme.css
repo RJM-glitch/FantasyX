@@ -46,3 +46,5 @@ body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 #playerModal{background:#050713d9!important;backdrop-filter:blur(8px)}
 @media(max-width:850px){.fxHero{align-items:flex-start;flex-direction:column}.fxLeagueBadge{flex-direction:row;align-self:flex-start;min-width:0;padding:9px 12px}.fxLeagueBadge svg{width:36px;height:36px}.fxLeagueBadge small{display:none}.fxHero:after{right:-90px}}
 @media(prefers-reduced-motion:reduce){.fxLinks button:hover,.fxLinks a:hover,.fxTabs button:hover{transform:none}}
+
+.fxDisclaimer{margin:0 auto 22px;padding:0 8px;color:#c0b6dc;font-size:11px;text-align:center;opacity:.9}
