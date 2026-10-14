@@ -16,6 +16,7 @@ export function gameweekMeta(boot, now = Date.now()) {
   const deadlineTarget = futureDeadlines[0]?.event || null;
   return {
     currentGameweek: Number(current?.id ?? next?.id ?? latestFinished?.id ?? 1),
+    latestCompletedGameweek: Number(latestFinished?.id ?? 0),
     nextGameweek: Number(next?.id ?? deadlineTarget?.id ?? current?.id ?? latestFinished?.id ?? 1),
     deadlineGameweek: deadlineTarget ? Number(deadlineTarget.id) : null,
     deadline: deadlineTarget?.deadline_time || null
