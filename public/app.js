@@ -36,41 +36,25 @@ function playerFixture(p){
  return FIXTURES.find(x=>x.home?.short===p.club||x.away?.short===p.club)||null
 }
 function playerPointsBreakdown(p,f){
- if(!f)return[{label:'Minutes played',value:0,points:0}];
- const isHome=f.home?.short===p.club,own=isHome?Number(f.homeScore||0):Number(f.awayScore||0),opp=isHome?Number(f.awayScore||0):Number(f.homeScore||0);
- const mins=f.status==='FT'?90:f.status==='LIVE'?Number(f.minute||0):0;
- const rows=[{label:'Minutes played',value:mins,points:mins>=60?2:mins>0?1:0}];
- const clean=(p.pos==='GK'||p.pos==='DEF'||p.pos==='MID')&&mins>=60&&opp===0;
- if(clean)rows.push({label:'Clean sheets',value:1,points:(p.pos==='GK'||p.pos==='DEF')?4:1});
- else if(p.pos==='GK'||p.pos==='DEF'||p.pos==='MID')rows.push({label:'Clean sheets',value:0,points:0});
- if(f.status!=='Upcoming'){
-   const seed=(Number(p.id||0)*17+Number(String(f.id).replace(/\D/g,'')||0)*13)%100;
-   const goalChance=own>0&&seed<Math.min(45,own*15);
-   const assistChance=own>0&&!goalChance&&seed>=45&&seed<Math.min(75,45+own*10);
-   if(goalChance){
-     const gp=p.pos==='FWD'?4:p.pos==='MID'?5:6;
-     rows.push({label:'Goals scored',value:1,points:gp});
-   }
-   if(assistChance)rows.push({label:'Assists',value:1,points:3});
- }
- if(p.cap){
-   const subtotal=rows.reduce((a,r)=>a+r.points,0);
-   if(subtotal)rows.push({label:'Captain bonus',value:'×2',points:subtotal});
- }
+ const s=p.eventStats||null,base=Number(s?.total_points??p.eventPoints??0);
+ const fields=[['Minutes played','minutes'],['Goals scored','goals_scored'],['Assists','assists'],['Clean sheets','clean_sheets'],['Goals conceded','goals_conceded'],['Saves','saves'],['Penalties saved','penalties_saved'],['Penalties missed','penalties_missed'],['Yellow cards','yellow_cards'],['Red cards','red_cards'],['Own goals','own_goals'],['Bonus points','bonus']];
+ const rows=s?fields.map(([label,key])=>({label,value:Number(s[key]||0),points:null})):[];
+ rows.push({label:'Official FPL points',value:base,points:base});
+ if(p.cap)rows.push({label:'Captain bonus (×2)',value:'×2',points:base});
  return rows;
 }
 window.closePlayerModal=()=>{$('playerModal')?.classList.add('hidden');document.body.classList.remove('modalOpen')};
 window.openPlayerModal=id=>{
  const p=P.find(x=>x.id===Number(id))||S.find(x=>x.id===Number(id));
  if(!p)return;
- const f=playerFixture(p),rows=playerPointsBreakdown(p,f),total=rows.reduce((a,r)=>a+r.points,0),idx=S.findIndex(x=>x.id===p.id);
+ const f=playerFixture(p),rows=playerPointsBreakdown(p,f),basePoints=Number(p.eventStats?.total_points??p.eventPoints??0),total=basePoints*(p.cap?2:1),idx=S.findIndex(x=>x.id===p.id);
  let match='';
  if(f){
    const showScore=f.status==='LIVE'||f.status==='FT';
    match=`<div class="playerDetailMatch"><div class="detailClub"><span>${f.home.name}</span><img src="${f.home.badge}" alt="" onerror="this.onerror=null;this.src='${f.home.badgeFallback||'/player.svg'}'"></div><strong class="detailScore">${showScore?f.homeScore+' - '+f.awayScore:'vs'}</strong><div class="detailClub away"><img src="${f.away.badge}" alt="" onerror="this.onerror=null;this.src='${f.away.badgeFallback||'/player.svg'}'"><span>${f.away.name}</span></div></div><div class="detailStatus">${f.status}${f.status==='LIVE'&&f.minute?' · '+f.minute+'′':''}</div>`;
  }else match='<div class="detailStatus">No FantasyX fixture available</div>';
  const inSquad=idx>=0,subs=inSquad?substitutionCandidates(p):[];
- $('playerModalContent').innerHTML=`<div class="playerDetailHead"><div><small>${p.pos} · ${p.clubName}</small><h2>${p.first||''} ${p.second||p.name}</h2></div><img src="${p.photo}" alt="${p.name}" onerror="this.src='/player.svg'"></div><div class="playerDetailBox">${match}</div><div class="playerDetailBox"><h3>Points breakdown</h3><div class="pointsHead"><span>Statistic</span><span>Value</span><span>Points</span></div>${rows.map(r=>`<div class="pointBreakRow"><span>${r.label}</span><span>${r.value}</span><b>${r.points>0?'+':''}${r.points} pts</b></div>`).join('')}<div class="pointsTotal"><span>Total</span><strong>${total} pts</strong></div></div><div class="playerActionGrid">${!inSquad?`<button class="detailAction addAction" onclick="addFromModal(${p.id})" ${canAdd(p)?'':'disabled'}>+ Add player</button>`:`<button class="detailAction removeAction" onclick="removeFromModal(${p.id})">− Remove</button><button class="detailAction subAction" onclick="showSubstituteOptions(${p.id})" ${subs.length?'':'disabled'}>⇄ Substitute</button><button class="detailAction captainAction" onclick="cap(${idx});closePlayerModal()">${p.cap?'Captain ✓':'Make captain'}</button>`}</div><div id="substituteOptions"></div>`;
+ $('playerModalContent').innerHTML=`<div class="playerDetailHead"><div><small>${p.pos} · ${p.clubName}</small><h2>${p.first||''} ${p.second||p.name}</h2></div><img src="${p.photo}" alt="${p.name}" onerror="this.src='/player.svg'"></div><div class="playerDetailBox">${match}</div><div class="playerDetailBox"><h3>Points breakdown</h3><div class="pointsHead"><span>Statistic</span><span>Value</span><span>Points</span></div>${rows.map(r=>`<div class="pointBreakRow"><span>${r.label}</span><span>${r.value}</span><b>${r.points===null?'—':(r.points>0?'+':'')+r.points+' pts'}</b></div>`).join('')}<div class="pointsTotal"><span>Total</span><strong>${total} pts</strong></div></div><div class="playerActionGrid">${!inSquad?`<button class="detailAction addAction" onclick="addFromModal(${p.id})" ${canAdd(p)?'':'disabled'}>+ Add player</button>`:`<button class="detailAction removeAction" onclick="removeFromModal(${p.id})">− Remove</button><button class="detailAction subAction" onclick="showSubstituteOptions(${p.id})" ${subs.length?'':'disabled'}>⇄ Substitute</button><button class="detailAction captainAction" onclick="cap(${idx});closePlayerModal()">${p.cap?'Captain ✓':'Make captain'}</button>`}</div><div id="substituteOptions"></div>`;
  $('playerModal')?.classList.remove('hidden');document.body.classList.add('modalOpen');
 };
 window.setTeamView=v=>{if(v==='11'||v==='15'){TEAM_VIEW=v;localStorage.setItem('fx-team-view',v);pitch()}};window.changeFormation=f=>{FORM=f;localStorage.setItem('fx-formation',f);save();pitch()};window.autoPick=()=>{S.sort((a,b)=>(b.totalPoints||0)-(a.totalPoints||0));save();pitch()};window.setOnlineSquad=arr=>{if(Array.isArray(arr)){S=arr.map(x=>{const live=P.find(p=>p.id===Number(x.id));return live?{...live,...x,id:Number(x.id),photo:live.photo,clubBadge:live.clubBadge,clubBadgeFallback:live.clubBadgeFallback,clubName:live.clubName,first:live.first,second:live.second,cap:!!x.cap}:{...x,id:Number(x.id),photo:x.photo||'/player.svg',cap:!!x.cap}});localStorage.setItem('fx-squad-v7',JSON.stringify(S));render()}};function render(){market();pitch()}function currentGw(){return Math.max(1,Math.min(38,Number(window.FX_CURRENT_GAMEWEEK)||1))}function applyTransferLock(){if(window.FX_TRANSFER_OPEN!==undefined){TRANSFERS_LOCKED=!window.FX_TRANSFER_OPEN;TRANSFER_REASON=TRANSFERS_LOCKED?'Transfers are closed.':''}else{TRANSFERS_LOCKED=false;TRANSFER_REASON=''}market()}window.setFixtureData=(arr,gw)=>{FIXTURES=Array.isArray(arr)?arr:[];if(Number(gw||currentGw())===currentGw())applyTransferLock();pitch()};async function boot(){try{const d=await(await fetch(API+'/players')).json();P=d.players;CLUBS=d.teams;S=S.map(s=>{const p=P.find(x=>x.id===s.id);return p?{...p,cap:!!s.cap}:null}).filter(Boolean);for(const c of CLUBS){$('club').insertAdjacentHTML('beforeend',`<option value="${c.short}">${c.name}</option>`)}$('dataStatus').textContent=`${P.length} current players · FantasyX points start at 0`;render();window.dispatchEvent(new Event('fantasyx-ready'))}catch{$('dataStatus').textContent='Could not load player database.'}}$('search').oninput=market;$('filter').onchange=market;$('club').onchange=market;$('clear').onclick=()=>{if(!TRANSFERS_LOCKED){S=[];save();render()}};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));$(b.dataset.view).classList.remove('hidden')});boot();
