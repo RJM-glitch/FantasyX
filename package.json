@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/lineup.test.mjs",
+    "test": "node tests/lineup.test.mjs && node tests/fpl-live.test.mjs",
     "postinstall": "node scripts/build-football-snapshot.js"
   },
   "dependencies": {
