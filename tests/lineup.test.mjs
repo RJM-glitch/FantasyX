@@ -37,7 +37,7 @@ assert.equal(noBenchFlags.formation, null);
 assert.equal(noBenchFlags.arr.length, 15);
 
 const invalidFormation = rows.map(row => ({ ...row }));
-invalidFormation.find(row => row.player_id === 7).is_bench = true;
+invalidFormation.find(row => row.player_id === 4).is_bench = false;
 assert.equal(restoreLineup(invalidFormation).formation, null);
 
 console.log('PASS lineup restore');
