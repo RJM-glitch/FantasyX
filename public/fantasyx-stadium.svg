@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1000" preserveAspectRatio="xMidYMid slice">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#100b2b"/><stop offset=".42" stop-color="#21114b"/><stop offset="1" stop-color="#06172a"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#8b38ff" stop-opacity=".62"/><stop offset="1" stop-color="#8b38ff" stop-opacity="0"/></radialGradient>
+ <linearGradient id="stand" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#3a1b62"/><stop offset="1" stop-color="#08162b"/></linearGradient>
+ <linearGradient id="pitch" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#087a5c"/><stop offset="1" stop-color="#031f22"/></linearGradient>
+ <linearGradient id="board"><stop stop-color="#35105d"/><stop offset=".5" stop-color="#1b67db"/><stop offset="1" stop-color="#35105d"/></linearGradient>
+ <pattern id="crowd" width="24" height="19" patternUnits="userSpaceOnUse"><circle cx="4" cy="5" r="2" fill="#a9d9ff" opacity=".7"/><circle cx="14" cy="11" r="2.5" fill="#d1a6ff" opacity=".62"/><circle cx="21" cy="3" r="1.5" fill="#fff" opacity=".55"/></pattern>
+ <filter id="blur"><feGaussianBlur stdDeviation="30"/></filter>
+</defs>
+<rect width="1800" height="1000" fill="url(#sky)"/>
+<circle cx="900" cy="280" r="410" fill="url(#glow)"/>
+<g opacity=".25" fill="#8aa8ff"><circle cx="120" cy="120" r="3"/><circle cx="330" cy="70" r="2"/><circle cx="1520" cy="110" r="3"/><circle cx="1320" cy="205" r="2"/><circle cx="570" cy="165" r="2"/><circle cx="1690" cy="250" r="2"/></g>
+<!-- distant skyline -->
+<g fill="#09152c" stroke="#493578" stroke-width="2" opacity=".92">
+<path d="M0 390V300h42v-60h18v60h42v-88h25v88h40v-42h35v132zM220 390V280h55v-70h22v70h28v-35h40v145zM1310 390V280h35v-70h20v70h35v-45h35v155zM1480 390V230h50v-50h20v50h38v-90h25v90h44v-45h38v155zM1710 390V290h30v-60h22v60h38v100z"/>
+<path d="M770 390V260h30v-35h15v35h32v130M920 390V245h25v-52h12v52h26v145M1000 390V290h25v-30h12v30h26v100"/>
+</g>
+<!-- stadium outer roof -->
+<path d="M0 460Q900 80 1800 460L1800 560Q900 245 0 560Z" fill="#101a36" stroke="#b08bff" stroke-opacity=".65" stroke-width="5"/>
+<path d="M0 478Q900 145 1800 478" fill="none" stroke="#4ee5ff" stroke-opacity=".5" stroke-width="3"/>
+<!-- floodlights -->
+<g fill="#f8fbff"><g transform="translate(85 390)"><path d="M0 0L-30 -100 25 -100 8 0Z" fill="#1d2a48"/><rect x="-58" y="-120" width="105" height="22" rx="5" fill="#dff8ff"/><g fill="#fff"><circle cx="-45" cy="-109" r="3"/><circle cx="-25" cy="-109" r="3"/><circle cx="-5" cy="-109" r="3"/><circle cx="15" cy="-109" r="3"/><circle cx="35" cy="-109" r="3"/></g></g><g transform="translate(1715 390)"><path d="M0 0L-10 -100 45 -100 28 0Z" fill="#1d2a48"/><rect x="-26" y="-120" width="105" height="22" rx="5" fill="#dff8ff"/><g fill="#fff"><circle cx="-13" cy="-109" r="3"/><circle cx="7" cy="-109" r="3"/><circle cx="27" cy="-109" r="3"/><circle cx="47" cy="-109" r="3"/><circle cx="67" cy="-109" r="3"/></g></g></g>
+<!-- upper and lower stands -->
+<path d="M0 450Q900 230 1800 450L1800 690Q900 470 0 690Z" fill="url(#stand)"/>
+<path d="M0 475Q900 265 1800 475L1800 505Q900 295 0 505Z" fill="url(#crowd)" opacity=".95"/>
+<path d="M0 535Q900 330 1800 535L1800 570Q900 365 0 570Z" fill="url(#crowd)" opacity=".9"/>
+<path d="M0 605Q900 405 1800 605L1800 640Q900 440 0 640Z" fill="url(#crowd)" opacity=".9"/>
+<path d="M0 650Q900 460 1800 650L1800 710Q900 515 0 710Z" fill="url(#stand)" stroke="#8e5cff" stroke-opacity=".5" stroke-width="3"/>
+<!-- football legends as original silhouettes, not portraits -->
+<g opacity=".95">
+ <g transform="translate(250 220)"><circle cx="0" cy="0" r="36" fill="#11142b" stroke="#a9c6ff" stroke-width="3"/><path d="M-50 46Q0 20 50 46L74 190H-72Z" fill="#c61d48"/><path d="M-40 52L-82 120 -68 135 -25 90M40 52L78 115 65 128 22 91" fill="none" stroke="#e0eaff" stroke-width="22" stroke-linecap="round"/><path d="M-45 190L-55 265M40 190L54 265" stroke="#11142b" stroke-width="30" stroke-linecap="round"/><path d="M-70 275L-20 275M36 275L82 275" stroke="#fff" stroke-width="14" stroke-linecap="round"/></g>
+ <g transform="translate(510 205)"><circle cx="0" cy="0" r="34" fill="#11142b" stroke="#b8f1ff" stroke-width="3"/><path d="M-48 43Q0 24 48 43L65 182H-65Z" fill="#e8f2ff"/><path d="M-38 51L-78 113 -62 128 -18 91M38 51L78 113 62 128 18 91" fill="none" stroke="#101b3b" stroke-width="22" stroke-linecap="round"/><path d="M-38 183L-45 255M38 183L45 255" stroke="#101b3b" stroke-width="27" stroke-linecap="round"/><path d="M-58 265L-13 265M27 265L73 265" stroke="#fff" stroke-width="14" stroke-linecap="round"/></g>
+ <g transform="translate(1290 205)"><circle cx="0" cy="0" r="35" fill="#11142b" stroke="#ffe4b0" stroke-width="3"/><path d="M-48 43Q0 23 48 43L66 182H-66Z" fill="#e6e9f4"/><path d="M-38 51L-79 115 -63 130 -18 91M38 51L79 115 63 130 18 91" fill="none" stroke="#9d1438" stroke-width="22" stroke-linecap="round"/><path d="M-38 183L-46 255M38 183L46 255" stroke="#11142b" stroke-width="27" stroke-linecap="round"/><path d="M-58 265L-13 265M27 265L73 265" stroke="#fff" stroke-width="14" stroke-linecap="round"/></g>
+ <g transform="translate(1540 225)"><circle cx="0" cy="0" r="35" fill="#11142b" stroke="#b8f1ff" stroke-width="3"/><path d="M-48 43Q0 23 48 43L66 182H-66Z" fill="#4bb5ee"/><path d="M-38 51L-79 115 -63 130 -18 91M38 51L79 115 63 130 18 91" fill="none" stroke="#e9f8ff" stroke-width="22" stroke-linecap="round"/><path d="M-38 183L-46 255M38 183L46 255" stroke="#101b3b" stroke-width="27" stroke-linecap="round"/><path d="M-58 265L-13 265M27 265L73 265" stroke="#fff" stroke-width="14" stroke-linecap="round"/></g>
+</g>
+<!-- giant decorative lion-crown mark -->
+<g transform="translate(900 315)" opacity=".62">
+ <path d="M-122 -80L-145 -158L-82 -128L-42 -183L0 -135L44 -183L83 -128L145 -158L122 -80L96 -46L96 42Q0 128 -96 42L-96 -46Z" fill="#7f4bff" fill-opacity=".12" stroke="#d2b0ff" stroke-width="7"/>
+ <path d="M-74 -35L-28 -5L-52 18L-26 48L0 28L26 48L52 18L28 -5L74 -35L50 -66L18 -50L0 -70L-18 -50L-50 -66Z" fill="#e6d9ff" fill-opacity=".18" stroke="#e6d9ff" stroke-width="4"/>
+ <path d="M-34 64Q0 86 34 64" fill="none" stroke="#e6d9ff" stroke-width="5" stroke-linecap="round"/>
+</g>
+<!-- FIFA / matchday boards -->
+<path d="M0 685Q900 555 1800 685L1800 746Q900 622 0 746Z" fill="url(#board)" stroke="#8deaff" stroke-opacity=".65" stroke-width="3"/>
+<g font-family="Arial,sans-serif" font-weight="900" fill="#fff" letter-spacing="7"><text x="80" y="718" font-size="30">FIFA</text><text x="380" y="718" font-size="22">PLAY • COMPETE • BELONG</text><text x="1230" y="718" font-size="22">DREAMS • SKILLS • LEGENDS</text><text x="1640" y="718" font-size="30">FIFA</text></g>
+<!-- pitch -->
+<path d="M0 747Q900 665 1800 747V1000H0Z" fill="url(#pitch)"/>
+<path d="M0 810Q900 730 1800 810M0 880Q900 800 1800 880M0 950Q900 870 1800 950" stroke="#a8ffd2" stroke-opacity=".12" stroke-width="2" fill="none"/>
+<path d="M560 1000L650 765M1240 1000L1150 765" stroke="#d0ffe5" stroke-opacity=".13" stroke-width="3"/>
+<path d="M760 1000L800 760H1000L1040 1000M800 760Q900 850 1000 760" stroke="#d0ffe5" stroke-opacity=".25" stroke-width="3" fill="none"/>
+<rect width="1800" height="1000" fill="#030816" opacity=".38"/>
+</svg>
