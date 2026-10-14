@@ -241,7 +241,97 @@ app.get('/api/auth/me',async(req,res)=>res.json({user:await currentUser(req)}));
 app.get('/api/account/profile',async(req,res)=>{try{if(!await requireUser(req,res))return;res.json({profile:(await rpc('fx_get_profile',{p_token_hash:tokenHash(req)}))?.[0]||null})}catch(e){res.status(500).json({error:String(e.message)})}});
 app.put('/api/account/profile',async(req,res)=>{try{if(!await requireUser(req,res))return;res.json({profile:(await rpc('fx_save_profile',{p_token_hash:tokenHash(req),p_real_name:String(req.body?.real_name||''),p_team_name:String(req.body?.team_name||'My XI'),p_favorite_team:String(req.body?.favorite_team||''),p_favorite_player:String(req.body?.favorite_player||'')}))?.[0]||null})}catch(e){res.status(500).json({error:String(e.message)})}});
 app.get('/api/account/squad',async(req,res)=>{try{if(!await requireUser(req,res))return;res.json({squad:await rpc('fx_get_squad',{p_token_hash:tokenHash(req)})||[]})}catch(e){res.status(500).json({error:String(e.message)})}});
-app.put('/api/account/squad',async(req,res)=>{try{if(!await requireUser(req,res))return;const h=tokenHash(req),next=(req.body?.squad||[]).slice(0,15),old=await rpc('fx_get_squad',{p_token_hash:h})||[],state=await transferWindowState(),recovery=old.length===0&&next.length>0;if(!state.open&&!recovery)return res.status(423).json({error:state.message});const oldIds=new Set(old.map(x=>Number(x.player_id))),nextIds=new Set(next.map(x=>Number(x.id))),incoming=[...nextIds].filter(id=>!oldIds.has(id)).length;if(!recovery&&state.penalty&&incoming>0)await rpc('fx_record_transfer_penalty',{p_token_hash:h,p_gameweek:state.targetGw,p_transfers:incoming});await rpc('fx_save_squad',{p_token_hash:h,p_squad:next});try{trackTransferActivity(await rpc('fx_public_squads',{}))}catch{}res.json({ok:true,recovery,gameweek:state.targetGw,transfers_in:recovery?0:incoming,penalty:recovery?0:(state.penalty?incoming*4:0)})}catch(e){res.status(500).json({error:String(e.message)})}});
+function validateSquadPayload(squad) {
+  if (!Array.isArray(squad)) return 'Squad must be a list of players.';
+  if (squad.length > 15) return 'A squad cannot contain more than 15 players.';
+  const ids = squad.map(p => Number(p?.id ?? p?.player_id));
+  if (ids.some(id => !Number.isInteger(id) || id <= 0)) return 'Every player must have a valid player ID.';
+  if (new Set(ids).size !== ids.length) return 'Your squad contains duplicate players.';
+
+  const positionLimits = { GK: 2, DEF: 5, MID: 5, FWD: 3 };
+  const counts = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+  const clubs = new Map();
+  let budget = 0;
+  for (const player of squad) {
+    const pos = String(player?.pos ?? player?.position ?? '').toUpperCase();
+    if (!(pos in positionLimits)) return 'A player has an invalid position.';
+    counts[pos]++;
+    if (counts[pos] > positionLimits[pos]) return 'Too many players in position ' + pos + '.';
+    const price = Number(player?.price);
+    if (!Number.isFinite(price) || price < 0) return 'A player has an invalid price.';
+    budget += price;
+    const club = String(player?.club ?? '').trim().toUpperCase();
+    if (!club) return 'A player is missing a club.';
+    clubs.set(club, (clubs.get(club) || 0) + 1);
+    if (clubs.get(club) > 3) return 'You cannot select more than three players from one club.';
+  }
+  if (budget > 100.0001) return 'Your squad exceeds the £100.0m budget.';
+
+  const captain = squad.filter(p => Boolean(p?.is_captain ?? p?.cap));
+  const vice = squad.filter(p => Boolean(p?.is_vice ?? p?.vice));
+  if (captain.length > 1) return 'Choose only one captain.';
+  if (vice.length > 1) return 'Choose only one vice-captain.';
+  if (captain.length && vice.length && Number(captain[0]?.id ?? captain[0]?.player_id) === Number(vice[0]?.id ?? vice[0]?.player_id)) {
+    return 'Your captain and vice-captain must be different players.';
+  }
+
+  if (squad.length === 15) {
+    if (counts.GK !== 2 || counts.DEF !== 5 || counts.MID !== 5 || counts.FWD !== 3) {
+      return 'A complete squad must contain 2 goalkeepers, 5 defenders, 5 midfielders and 3 forwards.';
+    }
+    const benchFlags = squad.map(p => p?.is_bench ?? p?.bench);
+    if (!benchFlags.every(value => typeof value === 'boolean')) return 'The starting XI and bench could not be identified.';
+    const starters = squad.filter(p => !(p?.is_bench ?? p?.bench));
+    const bench = squad.filter(p => Boolean(p?.is_bench ?? p?.bench));
+    const startCounts = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    for (const player of starters) startCounts[String(player?.pos ?? player?.position ?? '').toUpperCase()]++;
+    if (starters.length !== 11 || bench.length !== 4 || startCounts.GK !== 1 ||
+        startCounts.DEF < 3 || startCounts.DEF > 5 ||
+        startCounts.MID < 2 || startCounts.MID > 5 ||
+        startCounts.FWD < 1 || startCounts.FWD > 3) {
+      return 'Your starting XI, formation or four-player bench is invalid.';
+    }
+    if (captain.length && Boolean(captain[0]?.is_bench ?? captain[0]?.bench)) return 'Your captain must be in the starting XI.';
+    if (vice.length && Boolean(vice[0]?.is_bench ?? vice[0]?.bench)) return 'Your vice-captain must be in the starting XI.';
+  }
+  return null;
+}
+
+app.put('/api/account/squad', async (req, res) => {
+  try {
+    if (!await requireUser(req, res)) return;
+    const next = req.body?.squad;
+    const validationError = validateSquadPayload(next);
+    if (validationError) return res.status(400).json({ error: validationError });
+
+    const h = tokenHash(req);
+    const old = await rpc('fx_get_squad', { p_token_hash: h }) || [];
+    const state = await transferWindowState();
+    const recovery = old.length === 0 && next.length > 0;
+    const buildingSquad = old.length < 15 || next.length < 15;
+    if (!state.open && !recovery) return res.status(423).json({ error: state.message });
+
+    const oldIds = new Set(old.map(x => Number(x.player_id)));
+    const nextIds = new Set(next.map(x => Number(x.id ?? x.player_id)));
+    const incoming = [...nextIds].filter(id => !oldIds.has(id)).length;
+
+    await rpc('fx_save_squad', { p_token_hash: h, p_squad: next });
+    if (!recovery && !buildingSquad && state.penalty && incoming > 0) {
+      await rpc('fx_record_transfer_penalty', { p_token_hash: h, p_gameweek: state.targetGw, p_transfers: incoming });
+    }
+    try { trackTransferActivity(await rpc('fx_public_squads', {})); } catch {}
+    res.json({
+      ok: true,
+      recovery,
+      building_squad: buildingSquad,
+      gameweek: state.targetGw,
+      transfers_in: recovery || buildingSquad ? 0 : incoming,
+      penalty: recovery || buildingSquad ? 0 : (state.penalty ? incoming * 4 : 0)
+    });
+  } catch (e) {
+    res.status(500).json({ error: String(e.message) });
+  }
+});
 app.get('/api/account/points',async(req,res)=>{try{const u=await requireUser(req,res);if(!u)return;const uid=String(u.user_id||u.id||''),row=(await liveManagerRows()).find(x=>String(x.user_id)===uid);res.set('Cache-Control','no-store');res.json(row?{points:row.live_points,historical_points:row.historical_points,gameweek_points:row.gameweek_points,transfer_penalty:row.transfer_penalty,current_gameweek:row.current_gameweek,auto_substitutions:row.auto_substitutions}:{points:0,historical_points:0,gameweek_points:0,transfer_penalty:0,current_gameweek:2,auto_substitutions:[]})}catch(e){res.status(500).json({error:String(e.message)})}});
 app.get('/api/transfer-window', async (req, res) => {
   try {
