@@ -19,3 +19,5 @@ Brand ownership and image licenses remain with the respective rights holders. At
 The deploy-facing SVG copies are also available at `public/img/competitions/` under the same three filenames; LaLiga and Champions League preserve the official downloaded artwork inside SVG containers for the required SVG paths.
 
 Player profile faces are loaded at runtime from the English Wikipedia REST summary API, using the corresponding encyclopedia thumbnail when available; initials and kit-colour illustrations remain the fallback. Transfer corrections in this release: Trent Alexander-Arnold → Real Madrid, Alexander Isak → Liverpool, and Eberechi Eze → Arsenal.
+
+The 2026/27 player pool is based on the official Premier League submitted squad lists and Transfer Watch pages: https://www.premierleague.com/en/news/4706139/see-all-the-202627-premier-league-squad-lists and https://www.premierleague.com/en/transfers/2026-27/summer. It includes current-season additions and removes players no longer registered in the Premier League, including Trent Alexander-Arnold and Marc Cucurella.
