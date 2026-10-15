@@ -59,3 +59,5 @@ footer{border-top-color:#cfe1d4;color:#567164}.footer-brand{color:#173d2a}
 .kit-aston-villa{--kit:#670e36}
 
 .kit-brighton{--kit:#0057b8}
+
+.club-badge{display:block;width:42px;height:42px;object-fit:contain;margin:0 auto 3px}.fixture-team-fallback{display:none;font-size:10px;font-weight:800}.fixture-team-home{text-align:left}.fixture-team-away{text-align:right}.fixture-team-home .club-badge{margin-left:0}.fixture-team-away .club-badge{margin-right:0}
