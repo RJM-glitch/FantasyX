@@ -57,3 +57,5 @@ footer{border-top-color:#cfe1d4;color:#567164}.footer-brand{color:#173d2a}
 .player-face{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}.player-avatar.has-face:before,.player-avatar.has-face:after{display:none}.player-avatar.has-face .player-face{display:block}.player-avatar.has-face span{display:none}
 
 .kit-aston-villa{--kit:#670e36}
+
+.kit-brighton{--kit:#0057b8}
