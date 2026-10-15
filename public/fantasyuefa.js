@@ -26,13 +26,13 @@ function renderFixtures(){const list=fixtures;$("fixtureList").innerHTML=list.sl
 function save(){if(selected.length!==15){toast("Pick all 15 players first");return}const cnt={GK:2,DEF:5,MID:5,FWD:3};if(Object.entries(cnt).some(([pos,n])=>selected.filter(id=>players.find(p=>p.id===id)?.pos===pos).length!==n)){toast("Check your position balance");return}if(!captain||!vice||captain===vice){toast("Choose different captain and vice-captain");return}localStorage.setItem("fantasyuefa-squad",JSON.stringify({selected,captain,vice,formation:$("formation").value}));$("saveMessage").textContent="Saved on this device at "+new Date().toLocaleTimeString();toast("Squad saved on this device!")}
 document.querySelectorAll("[data-comp]").forEach(b=>b.addEventListener("click",()=>{currentComp="Premier League";document.querySelectorAll("[data-comp]").forEach(x=>x.classList.toggle("active",x===b));renderPlayers();renderFixtures()}));$("playerSearch").addEventListener("input",renderPlayers);$("positionFilter").addEventListener("change",renderPlayers);$("formation").addEventListener("change",renderPitch);$("captain").addEventListener("change",e=>captain=e.target.value);$("vice").addEventListener("change",e=>vice=e.target.value);$("saveSquad").addEventListener("click",save);$("clearSquad").addEventListener("click",()=>{if(confirm("Clear your selected squad?")){selected=[];captain="";vice="";localStorage.removeItem("fantasyuefa-squad");render();toast("Squad cleared")}});$("joinLeague").addEventListener("click",()=>{$("leagueMessage").textContent="Mini-leagues need a secure backend and accounts; this demo does not submit your code.";toast("League feature is preview-only")});$("profileBtn").addEventListener("click",()=>toast("Accounts will be added with the backend."));load();render();renderFixtures();
 const hourlyBackgrounds=[
-"https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=2400&q=90",
-"https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=2400&q=90",
-"https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=2400&q=90",
-"https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=2400&q=90",
-"https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=2400&q=90",
-"https://images.unsplash.com/photo-1518604666860-9ed391f76460?auto=format&fit=crop&w=2400&q=90",
-"https://images.unsplash.com/photo-1504016798967-59a258e9386d?auto=format&fit=crop&w=2400&q=90",
+"https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=3840&q=100",
+"https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=3840&q=100",
+"https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=3840&q=100",
+"https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=3840&q=100",
+"https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=3840&q=100",
+"https://images.unsplash.com/photo-1518604666860-9ed391f76460?auto=format&fit=crop&w=3840&q=100",
+"https://images.unsplash.com/photo-1504016798967-59a258e9386d?auto=format&fit=crop&w=3840&q=100",
 "https://commons.wikimedia.org/wiki/Special:FilePath/Thierry_Henry_2012.jpg",
 "https://commons.wikimedia.org/wiki/Special:FilePath/David_Beckham_2009.jpg",
 "https://commons.wikimedia.org/wiki/Special:FilePath/Alan_Shearer_2012.jpg"
