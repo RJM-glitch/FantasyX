@@ -11,7 +11,7 @@ const fixtures=[
 {comp:"Champions League",home:"Real Madrid",away:"Man City",date:"TUE · 21:00",tag:"CHAMPIONS LEAGUE"},
 {comp:"Premier League",home:"Chelsea",away:"Man City",date:"SUN · 16:30",tag:"PREMIER LEAGUE"},
 {comp:"LaLiga",home:"Atlético Madrid",away:"Sevilla",date:"SAT · 20:00",tag:"LALIGA"}];
-const competitionLogos={"Premier League":"/img/competitions/premier-league.svg",LaLiga:"/img/competitions/laliga.svg","Champions League":"/img/competitions/champions-league.svg"};let selected=[];let currentComp="all";let captain="";let vice="";
+const competitionLogos={"Premier League":"https://commons.wikimedia.org/wiki/Special:FilePath/Pl-logo-light.svg",LaLiga:"https://commons.wikimedia.org/wiki/Special:FilePath/LaLiga%20logo%20%282023%29.svg","Champions League":"https://commons.wikimedia.org/wiki/Special:FilePath/UEFA%20Champions%20League%20logo%20no%20text.svg"};let selected=[];let currentComp="all";let captain="";let vice="";
 const $=id=>document.getElementById(id);
 function load(){try{const x=JSON.parse(localStorage.getItem("fantasyuefa-squad")||"{}");selected=x.selected||[];captain=x.captain||"";vice=x.vice||"";if(x.formation)$("formation").value=x.formation}catch{}}
 function cost(){return selected.reduce((s,id)=>s+(players.find(p=>p.id===id)?.price||0),0)}
