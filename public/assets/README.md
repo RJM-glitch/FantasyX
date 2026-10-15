@@ -11,7 +11,7 @@ These local assets are used for the FantasyUefa fan-made interface. They are not
 ## Public legend photos
 
 - `legends/thierry-henry.jpg` — Thierry Henry photo by Web Summit, Wikimedia Commons, CC BY 2.0: https://commons.wikimedia.org/wiki/File:Thierry_Henry_(51649035951)_(cropped).jpg
-- `legends/lionel-messi.jpg` — Lionel Messi photo by soccer.ru, Wikimedia Commons, CC BY-SA 3.0: https://commons.wikimedia.org/wiki/File:Lionel_Messi_in_2018.jpg
+- `legends/mohamed-salah.jpg` — Mohamed Salah photo by soccer.ru, Wikimedia Commons, CC BY-SA 3.0: https://commons.wikimedia.org/wiki/File:Mohamed_Salah_2017.jpg
 - `legends/cristiano-ronaldo.jpg` — Cristiano Ronaldo photo by Ilya Khokhlov, Wikimedia Commons, CC BY-SA 3.0: https://commons.wikimedia.org/wiki/File:Cristiano_Ronaldo_20120609.jpg
 
 Brand ownership and image licenses remain with the respective rights holders. Attribution is retained here for the public photos. The site footer identifies FantasyUefa as an unofficial fan-made concept.
