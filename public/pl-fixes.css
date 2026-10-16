@@ -44,3 +44,6 @@ footer .brand-icon{background:#fff;color:#09264f}.pl-brand-icon img{object-fit:c
 .player-row .player-profile{cursor:pointer;position:relative;z-index:2}
 .player-row .player-profile img{pointer-events:none}
 .pitch-player{flex-shrink:0}
+/* Real Unsplash stadium photography: keep the image visible behind the light UI. */
+.backdrop{opacity:.74}
+.shade{background:linear-gradient(90deg,rgba(246,252,247,.60) 0%,rgba(246,252,247,.34) 48%,rgba(246,252,247,.12) 100%),linear-gradient(0deg,rgba(236,247,238,.42) 0%,rgba(236,247,238,.02) 78%)}
